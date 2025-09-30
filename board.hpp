@@ -7,6 +7,7 @@
 
 
 class Board {
+public:
     Bitboards bitboards;
 
     Board();
