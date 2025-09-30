@@ -49,7 +49,7 @@ inline void Bitboards::pickup_piece(eSquare square, eColor piece_color, ePiece p
 
 // Remove the piece at the given square, return what kind of piece it was.
 inline ePiece Bitboards::pickup_piece(eSquare square, eColor piece_color) {
-    if (color_bbs[piece_color].filled(square)) // If piece not present in given color bb just return NULL_PIECE
+    if (!color_bbs[piece_color].filled(square)) // If piece not present in given color bb just return NULL_PIECE
         return NULL_PIECE;
 
     color_bbs[piece_color].zero(square);
