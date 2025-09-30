@@ -4,7 +4,7 @@
 
 Bitboards::Bitboards() {
     for (eColor color = WHITE; color <= BLACK; color++)
-        for (ePiece pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
+        for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
             piece_bbs[color][pt] = STARTING_PIECE_POSITIONS[color][pt];
 
     color_bbs[WHITE] = STARTING_COLOR_POSITIONS[WHITE];
@@ -15,7 +15,7 @@ Bitboards::Bitboards() {
 
 Bitboards::Bitboards(const Bitboards& other) {
     for (eColor color = WHITE; color <= BLACK; color++)
-        for (ePiece pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
+        for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
             piece_bbs[color][pt] = other.piece_bbs[color][pt];
 
     color_bbs[WHITE] = other.color_bbs[WHITE];
@@ -24,14 +24,20 @@ Bitboards::Bitboards(const Bitboards& other) {
 }
 
 
-ePiece Bitboards::piece_at(eColor color, eSquare square) {
-    for (ePiece pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
-        if (piece_bbs[color][pt].filled(square))
-            return static_cast<ePiece>(pt);
-    return NULL_PIECE;
+ePiece Bitboards::piece_at(eSquare square) const {
+    eColor color = color_at(square);
+    return color & piece_at(color, square);
 }
 
-eColor Bitboards::color_at(eSquare square) {
+
+ePieceType Bitboards::piece_at(eColor color, eSquare square) const {
+    for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
+        if (piece_bbs[color][pt].filled(square))
+            return static_cast<ePieceType>(pt);
+    return NULL_PT;
+}
+
+eColor Bitboards::color_at(eSquare square) const {
     if (color_bbs[WHITE].filled(square))
         return WHITE;
     else if (color_bbs[BLACK].filled(square))
@@ -40,26 +46,26 @@ eColor Bitboards::color_at(eSquare square) {
 }
 
 void Bitboards::handle_move(const Move& move) {
-    pickup_piece(move.from, side_to_move, move.piece_from);
-    ePiece taken = put_piece(move.to, side_to_move, move.piece_from);
+    pickup_piece(move.from, side_to_move & move.piece_from);
+    ePiece taken = put_piece(move.to, side_to_move & move.piece_to);
     side_to_move = !side_to_move;
 }
 
 
 // Put a piece down on the board. If there was another piece on that square previously,
 // return the type of piece that was removed.
-inline ePiece Bitboards::put_piece(eSquare square, eColor piece_color, ePiece piece_type) {
-    color_bbs[piece_color].fill(square);
-    piece_bbs[piece_color][piece_type].fill(square);
+inline ePiece Bitboards::put_piece(eSquare square, ePiece piece) {
+    color_bbs[color_of(piece)].fill(square);
+    piece_bbs[color_of(piece)][type_of(piece)].fill(square);
 
-    return pickup_piece(square, !piece_color); // Remove and return the piece that was previously there.
+    return pickup_piece(square, !color_of(piece)); // Remove and return the piece that was previously there.
 }
 
 
 // Remove a piece from the board
-inline void Bitboards::pickup_piece(eSquare square, eColor piece_color, ePiece piece_type) {
-    color_bbs[piece_color].zero(square);
-    piece_bbs[piece_color][piece_type].zero(square);
+inline void Bitboards::pickup_piece(eSquare square, ePiece piece) {
+    color_bbs[color_of(piece)].zero(square);
+    piece_bbs[color_of(piece)][type_of(piece)].zero(square);
 }
 
 
@@ -67,8 +73,8 @@ inline void Bitboards::pickup_piece(eSquare square, eColor piece_color, ePiece p
 inline ePiece Bitboards::pickup_piece(eSquare square, eColor piece_color) {
     color_bbs[piece_color].zero(square);
 
-    ePiece pt = piece_at(piece_color, square);
-    if (pt != NULL_PIECE)
+    ePieceType pt = piece_at(piece_color, square);
+    if (pt != NULL_PT)
         piece_bbs[piece_color][pt].zero(square);
-    return pt;
+    return piece_color & pt;
 }

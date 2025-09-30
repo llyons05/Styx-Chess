@@ -21,9 +21,9 @@ void Board::print() {
         for (int col = 0; col < 8; col++) {
             char print_char = '-';
             eSquare square = static_cast<eSquare>(row*8 + col);
-            eColor color = bitboards.color_at(square);
+            eColor color = bbs.color_at(square);
             if (color != NULL_COLOR) {
-                ePiece piece = bitboards.piece_at(color, square);
+                ePieceType piece = bbs.piece_at(color, square);
                 print_char = piece_chars[color][piece];
             }
             std::cout << print_char << " ";
@@ -31,5 +31,5 @@ void Board::print() {
         std::cout << "\n";
     }
     std::cout << "\n\ta b c d e f g h\n";
-    std::cout << ((bitboards.side_to_move == WHITE) ? "White" : "Black") << " to move\n";
+    std::cout << ((bbs.side_to_move == WHITE) ? "White" : "Black") << " to move\n";
 }

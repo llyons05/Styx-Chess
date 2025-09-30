@@ -13,20 +13,36 @@ public:
     inline BB64() : bb(0) {};
     inline BB64(U64 bb) : bb(bb) {}
     
-    inline void zero(eSquare square) {
+    constexpr void zero(eSquare square) {
         bb &= ~SQUARES[square];
     }
     
-    inline void fill(eSquare square) {
+    constexpr void fill(eSquare square) {
         bb |= SQUARES[square];
     }
 
-    inline bool filled(eSquare square) const {
+    constexpr bool filled(eSquare square) const {
         return bb & SQUARES[square];
     }
     
     inline U8 bitcount() const {
         return count_bits(bb);
+    }
+
+    template<Direction D>
+    constexpr BB64 shift() {
+        return BB64(
+          D == NORTH         ? bb << 8
+        : D == SOUTH         ? bb >> 8
+        : D == NORTH + NORTH ? bb << 16
+        : D == SOUTH + SOUTH ? bb >> 16
+        : D == EAST          ? (bb & ~File_BB[FILE_H]) << 1
+        : D == WEST          ? (bb & ~File_BB[FILE_A]) >> 1
+        : D == NORTH_EAST    ? (bb & ~File_BB[FILE_H]) << 9
+        : D == NORTH_WEST    ? (bb & ~File_BB[FILE_A]) << 7
+        : D == SOUTH_EAST    ? (bb & ~File_BB[FILE_H]) >> 7
+        : D == SOUTH_WEST    ? (bb & ~File_BB[FILE_A]) >> 9
+                            : 0);
     }
     
     inline BB64 operator&(const BB64& other) const {
@@ -81,13 +97,14 @@ public:
 
     void handle_move(const Move& move);
 
-    ePiece piece_at(eColor color, eSquare square);
-    eColor color_at(eSquare square);
+    ePiece piece_at(eSquare square) const;
+    ePieceType piece_at(eColor color, eSquare square) const;
+    eColor color_at(eSquare square) const;
 
 private:
-    inline void pickup_piece(eSquare square, eColor piece_color, ePiece piece_type);
-    inline ePiece pickup_piece(eSquare square, eColor piece_color);
-    inline ePiece put_piece(eSquare square, eColor piece_color, ePiece piece_type);
+    inline void pickup_piece(eSquare square, ePiece piece);
+    inline ePiece pickup_piece(eSquare square, eColor color);
+    inline ePiece put_piece(eSquare square, ePiece piece);
 };
 
 

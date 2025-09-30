@@ -8,8 +8,8 @@ struct Move {
     eSquare from;
     eSquare to;
 
-    ePiece piece_from : 3;
-    ePiece piece_to : 3;
+    ePieceType piece_from : 3;
+    ePieceType piece_to : 3;
 
     eSpecialMoveFlags move_flag : 3;
     bool is_capture : 1;

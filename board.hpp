@@ -8,11 +8,14 @@
 
 class Board {
 public:
-    Bitboards bitboards;
+    Bitboards bbs;
 
     Board();
 
-    void reset();
+    eColor stm() const {
+        return bbs.side_to_move;
+    }
 
+    void reset();
     void print();
 };
