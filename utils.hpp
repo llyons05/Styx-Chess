@@ -10,25 +10,28 @@ typedef uint32_t U32;
 typedef uint64_t U64;
 
 
-enum eColor {
+enum eColor : U8 {
     WHITE,
     BLACK,
-    NULL_COLOR
+    NUM_COLORS
 };
+
 
 inline eColor operator++(eColor& color, int) {
     eColor temp = color;
-    color = static_cast<eColor>((color + 1) % (NULL_COLOR + 1));
+    color = static_cast<eColor>((color + 1) % (NUM_COLORS + 1));
     return temp;
 }
+
 
 constexpr eColor operator!(eColor color) {
     switch (color) {
         case WHITE: return BLACK;
         case BLACK: return WHITE;
-        default: return NULL_COLOR;
+        default: return NUM_COLORS;
     }
 }
+
 
 enum ePieceType : U8 {
     PAWN,
@@ -37,35 +40,27 @@ enum ePieceType : U8 {
     ROOK,
     QUEEN,
     KING,
-    NUM_PIECE_TYPES,
-    NULL_PT
+    NUM_PIECE_TYPES
 };
+
 
 constexpr ePieceType operator++(ePieceType& piece, int) {
     ePieceType temp = piece;
-    piece = static_cast<ePieceType>((piece + 1) % (NULL_PT + 1));
+    piece = static_cast<ePieceType>((piece + 1) % (NUM_PIECE_TYPES + 1));
     return temp;
 }
 
 
-enum ePiece : U8 {
-    W_PAWN = PAWN,      W_BISHOP, W_KNIGHT, W_ROOK, W_QUEEN, W_KING,
-    B_PAWN = PAWN + 8,  B_BISHOP, B_KNIGHT, B_ROOK, B_QUEEN, B_KING,
-    NULL_PIECE = 15
+// Small wrapper class for a piece
+class Piece {
+public:
+    eColor color : 4;
+    ePieceType pt : 4;
+
+    constexpr Piece() : color(NUM_COLORS), pt(NUM_PIECE_TYPES) {}
+    constexpr Piece(eColor color, ePieceType pt) : color(color), pt(pt) {}
+    constexpr bool is_null() const { return (color == NUM_COLORS) || (pt == NUM_PIECE_TYPES); }
 };
-
-constexpr ePiece operator&(eColor color, ePieceType pt) {
-    return static_cast<ePiece>(pt | ((color == WHITE) ? 0 : 8));
-}
-
-constexpr eColor color_of(ePiece piece) {
-    assert(piece != NULL_PIECE);
-    return static_cast<eColor>(piece >> 3); // 4th bit will encode the color
-}
-
-constexpr ePieceType type_of(ePiece piece) {
-    return static_cast<ePieceType>(piece & 7); // Lower 3 bits encode piece type
-}
 
 
 enum eSquare : U8 {
@@ -79,6 +74,7 @@ enum eSquare : U8 {
     A8, B8, C8, D8, E8, F8, G8, H8,
     NULL_SQUARE
 };
+
 
 constexpr eSquare operator++(eSquare& square, int) {
     eSquare temp = square;
@@ -96,7 +92,7 @@ enum File : U8 {
     FILE_F,
     FILE_G,
     FILE_H,
-    FILE_NULL
+    NUM_FILES
 };
 
 
@@ -106,6 +102,7 @@ enum eCastle : U8 {
     CASTLE_BK = 4,
     CASTLE_BQ = 8
 };
+
 
 enum eSpecialMoveFlags : U8 {
     MFLAG_NORMAL,
