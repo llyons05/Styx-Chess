@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <vector>
 
-const int MAX_LEGAL_MOVES = 218;
+const int MAX_MOVES = 256;
 
 class Move_Generator {
 public:
