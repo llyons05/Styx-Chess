@@ -110,14 +110,14 @@ public:
 
     void handle_move(const Move& move);
 
-    ePiece piece_at(eSquare square) const;
+    Piece piece_at(eSquare square) const;
     ePieceType piece_at(eColor color, eSquare square) const;
     eColor color_at(eSquare square) const;
 
 private:
-    inline void pickup_piece(eSquare square, ePiece piece);
-    inline ePiece pickup_piece(eSquare square, eColor color);
-    inline ePiece put_piece(eSquare square, ePiece piece);
+    inline void pickup_piece(eSquare square, Piece piece);
+    inline Piece pickup_piece(eSquare square, eColor color);
+    inline Piece put_piece(eSquare square, Piece piece);
 };
 
 

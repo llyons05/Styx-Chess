@@ -9,7 +9,7 @@ int main() {
 
     Move move;
     move.id = 0;
-    move.from = A3;
+    move.from = A2;
     move.to = A4;
     move.piece_from = PAWN;
     move.piece_to = PAWN;
