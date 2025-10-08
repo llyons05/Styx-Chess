@@ -2,7 +2,8 @@
 
 #include "utils.hpp"
 
-struct Move {
+class Move {
+public:
     uint8_t id;
 
     eSquare from;
@@ -13,4 +14,6 @@ struct Move {
 
     eSpecialMoveFlags move_flag : 3;
     bool is_capture : 1;
+
+    Move()
 };

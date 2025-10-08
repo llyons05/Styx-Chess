@@ -129,14 +129,6 @@ enum Direction : int8_t {
 };
 
 
-constexpr U8 count_bits(U64 bits) {
-    #ifdef __GNUC__
-	   return __builtin_popcountll(bits);
-   #else
-	   return _mm_popcnt_u64(bits);
-   #endif
-}
-
 constexpr U8 binary_to_square(U64 binary) {
     if (binary == 0) return 0;
     return __builtin_ctzll(binary);

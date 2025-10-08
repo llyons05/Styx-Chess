@@ -4,6 +4,8 @@
 #include "move.hpp"
 
 #include <cstdint>
+#include <bit>
+
 
 // Wrapper class for a 64-bit bitboard
 class BB64 {
@@ -26,7 +28,18 @@ public:
     }
     
     inline U8 bitcount() const {
-        return count_bits(bb);
+        return std::__popcount(bb);
+    }
+
+    constexpr eSquare lsb() const {
+        assert(bb); // Cannot be 0
+        return eSquare(std::__countr_zero(bb));
+    }
+
+    constexpr eSquare pop() {
+        const eSquare s = lsb();
+        bb &= bb - 1;
+        return s;
     }
 
     template<Direction D>

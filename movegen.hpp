@@ -10,7 +10,7 @@ const int MAX_LEGAL_MOVES = 218;
 
 class Move_Generator {
 public:
-    Move_Generator(const Board& board, U8 previous_movecount) : board(board) {
+    Move_Generator(const Board& board, U8 previous_movecount) : board(board), movelist() {
         movelist.reserve(previous_movecount);
     }
 
@@ -19,6 +19,8 @@ public:
 private:
     const Board& board;
     std::vector<Move> movelist;
+
+    void write_moves(eSquare from, BB64 to);
 
     void gen_pawn_moves();
     void gen_bishop_moves();

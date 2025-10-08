@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-Board::Board() {
+Board::Board() : bbs() {
     
 }
 
