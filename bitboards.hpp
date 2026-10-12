@@ -5,29 +5,35 @@
 
 #include <cstdint>
 #include <bit>
+#include <iostream>
 
+constexpr U64 FILLED_COLS[8] = {72340172838076673ULL, 217020518514230019ULL, 506381209866536711ULL, 1085102592571150095ULL, 2242545357980376863ULL, 4557430888798830399ULL, 9187201950435737471ULL, 18446744073709551615ULL};
 
 // Wrapper class for a 64-bit bitboard
 class BB64 {
 public:
     U64 bb;
 
-    inline BB64() : bb(0) {};
-    inline BB64(U64 bb) : bb(bb) {}
+    constexpr BB64() : bb(0) {};
+    constexpr BB64(U64 bb) : bb(bb) {}
+    constexpr BB64(eSquare s) : bb(1ULL << U64(s)) {std::cout << bb << "\n";}
+    constexpr BB64(const BB64& bb) : bb(bb.bb) {}
+    
+    void print() const;
     
     constexpr void zero(eSquare square) {
-        bb &= ~SQUARES[square];
+        bb &= ~(1ULL << square);
     }
     
     constexpr void fill(eSquare square) {
-        bb |= SQUARES[square];
+        bb |= (1ULL << square);
     }
 
     constexpr bool filled(eSquare square) const {
-        return bb & SQUARES[square];
+        return bb & (1ULL << square);
     }
     
-    inline U8 bitcount() const {
+    constexpr U8 bitcount() const {
         return std::__popcount(bb);
     }
 
@@ -42,65 +48,81 @@ public:
         return s;
     }
 
-    template<Direction D>
-    constexpr BB64 shift() {
-        return BB64(
-          D == NORTH         ? bb << 8
-        : D == SOUTH         ? bb >> 8
-        : D == NORTH + NORTH ? bb << 16
-        : D == SOUTH + SOUTH ? bb >> 16
-        : D == EAST          ? (bb & ~File_BB[FILE_H]) << 1
-        : D == WEST          ? (bb & ~File_BB[FILE_A]) >> 1
-        : D == NORTH_EAST    ? (bb & ~File_BB[FILE_H]) << 9
-        : D == NORTH_WEST    ? (bb & ~File_BB[FILE_A]) << 7
-        : D == SOUTH_EAST    ? (bb & ~File_BB[FILE_H]) >> 7
-        : D == SOUTH_WEST    ? (bb & ~File_BB[FILE_A]) >> 9
-                            : 0);
+    template<Direction D, U8 Shifts = 1>
+    constexpr BB64 shift() const {
+        static_assert((D < NUM_DIRECTIONS) && (Shifts < 8) && (Shifts > 0));
+        constexpr BB64 shift_mask = can_dir_shift_bb<D, Shifts>();
+        return D == NORTH ? bb << 8*Shifts
+            : D == SOUTH ? bb >> 8*Shifts
+            : D == EAST  ? (bb & shift_mask) << 1*Shifts
+            : D == WEST  ? (bb & shift_mask) >> 1*Shifts
+
+            : D == NORTHEAST ? (bb & shift_mask) << 9*Shifts
+            : D == SOUTHEAST ? (bb & shift_mask) >> 7*Shifts
+            : D == SOUTHWEST ? (bb & shift_mask) >> 9*Shifts
+            :/*D == NORTHWEST*/(bb & shift_mask) << 7*Shifts;
     }
     
-    inline BB64 operator&(const BB64& other) const {
+    constexpr BB64 operator&(const BB64& other) const {
         return BB64(bb & other.bb);
     }
-    inline BB64 operator&=(const BB64 other) {
+    constexpr BB64 operator&=(const BB64 other) {
         bb &= other.bb;
         return *this;
     }
     
-    inline BB64 operator|(const BB64& other) const {
+    constexpr BB64 operator|(const BB64& other) const {
         return BB64(bb | other.bb);
     }
-    inline BB64 operator|=(const BB64 other) {
+    constexpr BB64 operator|=(const BB64 other) {
         bb |= other.bb;
         return *this;
     }
     
-    inline BB64 operator<<(U8 shift) const {
+    constexpr BB64 operator<<(U8 shift) const {
         return BB64(bb << shift);
     }
     
-    inline BB64 operator>>(U8 shift) const {
+    constexpr BB64 operator>>(U8 shift) const {
         return BB64(bb >> shift);
     }
     
-    inline BB64& operator=(U64 new_bb) {
+    constexpr BB64& operator=(U64 new_bb) {
         bb = new_bb;
         return *this;
     }
-    
-    inline operator bool() const {
+
+    constexpr BB64 operator~() const {
+        return BB64(~bb);
+    }
+
+    constexpr operator bool() const {
         return bb;
     }
 
-    explicit inline operator U64() const {
+    explicit constexpr operator U64() const {
         return bb;
+    }
+    private:
+    template<Direction D, U8 Shifts>
+    static constexpr BB64 can_dir_shift_bb() {
+        static_assert((Shifts < 8) && (Shifts > 0));
+        return D == NORTH ? ~0ULL
+            : D == SOUTH ? ~0ULL
+            : D == EAST  ? FILLED_COLS[7-Shifts]
+            : D == WEST  ? FILLED_COLS[7-Shifts] << Shifts
+
+            : D == NORTHEAST ? FILLED_COLS[7-Shifts]
+            : D == SOUTHEAST ? FILLED_COLS[7-Shifts]
+            : D == SOUTHWEST ? FILLED_COLS[7-Shifts] << Shifts
+            :/*D == NORTHWEST*/FILLED_COLS[7-Shifts] << Shifts;
     }
 };
 
-
 class Bitboards {
 public:
-    BB64 piece_bbs[2][NUM_PIECE_TYPES];
-    BB64 color_bbs[2];
+    BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
+    BB64 color_bbs[NUM_COLORS];
     eColor side_to_move;
     U8 castling_rights;
     U64 hash_key;
@@ -114,33 +136,47 @@ public:
     ePieceType piece_at(eColor color, eSquare square) const;
     eColor color_at(eSquare square) const;
 
+    BB64 all() {
+        return color_bbs[WHITE] | color_bbs[BLACK];
+    }
+
+    BB64& operator[](eColor color) {
+        return color_bbs[color];
+    }
+
+    BB64& operator[](eColor color, ePieceType piece) {
+        return piece_bbs[color][piece];
+    }
+
 private:
     inline void pickup_piece(eSquare square, Piece piece);
     inline Piece pickup_piece(eSquare square, eColor color);
     inline Piece put_piece(eSquare square, Piece piece);
 };
 
+constexpr BB64 ROWS[8] = {255ULL, 255ULL << 8, 255ULL << 16, 255ULL << 24, 255ULL << 32, 255ULL << 40, 255ULL << 48, 255ULL << 56};
+constexpr BB64 COLS[8] = {72340172838076673ULL, 72340172838076673ULL << 1, 72340172838076673ULL << 2, 72340172838076673ULL << 3, 72340172838076673ULL << 4, 72340172838076673ULL << 5, 72340172838076673ULL << 6, 72340172838076673ULL << 7};
 
-const BB64 STARTING_PIECE_POSITIONS[2][6] = {
+const BB64 STARTING_PIECE_POSITIONS[NUM_COLORS][NUM_PIECE_TYPES] = {
     {
-        SQUARES[A2] | SQUARES[B2] | SQUARES[C2] | SQUARES[D2] | SQUARES[E2] | SQUARES[F2] | SQUARES[G2] | SQUARES[H2],
-        SQUARES[C1] | SQUARES[F1],
-        SQUARES[B1] | SQUARES[G1],
-        SQUARES[A1] | SQUARES[H1],
-        SQUARES[D1],
-        SQUARES[E1]
+        BB64(A2) | BB64(B2) | BB64(C2) | BB64(D2) | BB64(E2) | BB64(F2) | BB64(G2) | BB64(H2),
+        BB64(C1) | BB64(F1),
+        BB64(B1) | BB64(G1),
+        BB64(A1) | BB64(H1),
+        BB64(D1),
+        BB64(E1)
     },
     {
-        SQUARES[A7] | SQUARES[B7] | SQUARES[C7] | SQUARES[D7] | SQUARES[E7] | SQUARES[F7] | SQUARES[G7] | SQUARES[H7],
-        SQUARES[C8] | SQUARES[F8],
-        SQUARES[B8] | SQUARES[G8],
-        SQUARES[A8] | SQUARES[H8],
-        SQUARES[D8],
-        SQUARES[E8]
+        BB64(A7) | BB64(B7) | BB64(C7) | BB64(D7) | BB64(E7) | BB64(F7) | BB64(G7) | BB64(H7),
+        BB64(C8) | BB64(F8),
+        BB64(B8) | BB64(G8),
+        BB64(A8) | BB64(H8),
+        BB64(D8),
+        BB64(E8)
     }
 };
 
-const BB64 STARTING_COLOR_POSITIONS[2] = {
+const BB64 STARTING_COLOR_POSITIONS[NUM_COLORS] = {
     STARTING_PIECE_POSITIONS[WHITE][PAWN]   | STARTING_PIECE_POSITIONS[WHITE][BISHOP] | 
     STARTING_PIECE_POSITIONS[WHITE][KNIGHT] | STARTING_PIECE_POSITIONS[WHITE][ROOK]   |
     STARTING_PIECE_POSITIONS[WHITE][QUEEN]  | STARTING_PIECE_POSITIONS[WHITE][KING],

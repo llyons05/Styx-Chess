@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "board.hpp"
+#include "movegen.hpp"
 
 #include <iostream>
 
@@ -14,6 +15,8 @@ int main() {
     move.piece_from = PAWN;
     move.piece_to = PAWN;
 
-    board.bbs.handle_move(move);
+    Move_Generator mg(board, 0);
+    mg.gen_moves();
+    board.move(move);
     board.print();
 }

@@ -1,5 +1,5 @@
-CFLAGS = -O0 -Wall
-SRC_FILES = bitboards.cpp main.cpp board.cpp movegen.cpp utils.cpp
+CXXFLAGS = -O0 -Wall -std=c++23
+SRC_FILES = bitboards.cpp main.cpp board.cpp movegen.cpp
 
 main:
-	g++ -o chess.exe ${CFLAGS} ${SRC_FILES}
+	g++ -o chess.exe ${CXXFLAGS} ${SRC_FILES}

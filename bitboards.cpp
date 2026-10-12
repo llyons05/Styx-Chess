@@ -3,6 +3,20 @@
 #include <cassert>
 #include <iostream>
 
+void BB64::print() const {
+    for (int i = 56; i >= 0; i -= 8) {
+        for (int j = 0; j < 8; j++) {
+            if (filled(eSquare(i + j))) {
+                std::cout << "1 "; 
+            }
+            else {
+                std::cout << "O ";
+            }
+        }
+        std::cout << "\n";
+    }
+}
+
 Bitboards::Bitboards() {
     for (eColor color = WHITE; color <= BLACK; color++)
         for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++)

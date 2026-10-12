@@ -10,17 +10,18 @@ const int MAX_MOVES = 256;
 
 class Move_Generator {
 public:
-    Move_Generator(const Board& board, U8 previous_movecount) : board(board), movelist() {
+    Move_Generator(Board& board, U8 previous_movecount) : board(board), bbs(board.bbs), movelist() {
         movelist.reserve(previous_movecount);
     }
 
-    std::vector<Move>& gen_moves(U8 expected_best);
+    std::vector<Move>& gen_moves();
 
 private:
-    const Board& board;
+    Board& board;
+    Bitboards& bbs;
     std::vector<Move> movelist;
 
-    void write_moves(eSquare from, BB64 to);
+    void write_moves(ePieceType piece, eSquare from, BB64 to);
 
     void gen_pawn_moves();
     void gen_bishop_moves();

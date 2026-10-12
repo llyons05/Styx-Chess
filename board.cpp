@@ -12,6 +12,10 @@ void Board::reset() {
     
 }
 
+void Board::move(Move& m) {
+    bbs.handle_move(m);
+}
+
 
 void Board::print() {
     const char piece_chars[2][8] = {{'P', 'B', 'N', 'R', 'Q', 'K', '-', '-'}, {'p', 'b', 'n', 'r', 'q', 'k', '-', '-'}};

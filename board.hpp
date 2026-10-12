@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "bitboards.hpp"
+#include "move.hpp"
 
 #include <cstdint>
 
@@ -15,6 +16,8 @@ public:
     eColor stm() const {
         return bbs.side_to_move;
     }
+
+    void move(Move& m);
 
     void reset();
     void print();
