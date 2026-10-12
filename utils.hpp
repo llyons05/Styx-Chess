@@ -3,7 +3,10 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <iostream>
 #include <nmmintrin.h>
+#include <numeric>
+#include <string>
 
 typedef  uint8_t  U8;
 typedef uint16_t U16;
@@ -31,6 +34,11 @@ constexpr eColor operator!(eColor color) {
         case BLACK: return WHITE;
         default: return NUM_COLORS;
     }
+}
+
+
+constexpr U8 relative_row(eColor c, U8 row) {
+    return (c == WHITE) ? 0 + row : 7 - row;
 }
 
 
@@ -81,6 +89,12 @@ constexpr eSquare operator++(eSquare& square, int) {
     eSquare temp = square;
     square = static_cast<eSquare>((square + 1) % (NULL_SQUARE + 1));
     return temp;
+}
+
+constexpr std::string square_str(eSquare square) {
+    int col = square % 8;
+    int row = square / 8;
+    return "abcdefgh"[col] + std::to_string(row+1);
 }
 
 
@@ -137,4 +151,23 @@ constexpr U8 binary_to_square(U64 binary) {
 
 constexpr U64 get_time() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+inline std::string get_colored(std::string original, int color_code) {
+    return "\033[" + std::to_string(color_code) + "m" + original + "\033[0m";
+}
+
+template <class Num_Type>
+inline Num_Type get_bounded_num(std::string prompt, Num_Type lower_inclusive = std::numeric_limits<Num_Type>::min(), Num_Type upper_exclusive = std::numeric_limits<Num_Type>::max()) {
+    std::cout << prompt;
+    Num_Type in;
+    std::cin >> in;
+    while (std::cin.fail() || (in < lower_inclusive) || (in >= upper_exclusive)) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << get_colored("\nInvalid entry\n", 31) << prompt;
+        std::cin >> in;
+    }
+    std::cout << "\n";
+    return in;
 }

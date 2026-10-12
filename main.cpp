@@ -3,20 +3,24 @@
 #include "movegen.hpp"
 
 #include <iostream>
+#include <string>
 
 int main() {
     Board board;
     board.print();
 
-    Move move;
-    move.id = 0;
-    move.from = A2;
-    move.to = A4;
-    move.piece_from = PAWN;
-    move.piece_to = PAWN;
-
-    Move_Generator mg(board, 0);
-    mg.gen_moves();
-    board.move(move);
-    board.print();
+    while (true) {
+        Move_Generator mg(board);
+        std::cout << mg.movelist.size() << " legal moves\n";
+        for (int i = 0; i < mg.movelist.size(); i++) {
+            std::cout << i << ": " << mg.movelist[i] << ", ";
+        }
+        std::cout << "\n";
+        int move_index = get_bounded_num<int>("Type move id: ", 0, mg.movelist.size());
+        Move m = mg.movelist[move_index];
+        board.move(m);
+        board.print();
+        std::string line;
+        std::getline(std::cin, line);
+    }
 }

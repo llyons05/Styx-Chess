@@ -16,10 +16,14 @@ public:
 
     constexpr BB64() : bb(0) {};
     constexpr BB64(U64 bb) : bb(bb) {}
-    constexpr BB64(eSquare s) : bb(1ULL << U64(s)) {std::cout << bb << "\n";}
+    constexpr BB64(eSquare s) : bb(1ULL << U64(s)) {}
     constexpr BB64(const BB64& bb) : bb(bb.bb) {}
     
     void print() const;
+
+    constexpr bool empty() {
+        return bb == 0;
+    }
     
     constexpr void zero(eSquare square) {
         bb &= ~(1ULL << square);
@@ -54,13 +58,13 @@ public:
         constexpr BB64 shift_mask = can_dir_shift_bb<D, Shifts>();
         return D == NORTH ? bb << 8*Shifts
             : D == SOUTH ? bb >> 8*Shifts
-            : D == EAST  ? (bb & shift_mask) << 1*Shifts
-            : D == WEST  ? (bb & shift_mask) >> 1*Shifts
+            : D == EAST  ? (shift_mask & bb) << 1*Shifts
+            : D == WEST  ? (shift_mask & bb) >> 1*Shifts
 
-            : D == NORTHEAST ? (bb & shift_mask) << 9*Shifts
-            : D == SOUTHEAST ? (bb & shift_mask) >> 7*Shifts
-            : D == SOUTHWEST ? (bb & shift_mask) >> 9*Shifts
-            :/*D == NORTHWEST*/(bb & shift_mask) << 7*Shifts;
+            : D == NORTHEAST ? (shift_mask & bb) << 9*Shifts
+            : D == SOUTHEAST ? (shift_mask & bb) >> 7*Shifts
+            : D == SOUTHWEST ? (shift_mask & bb) >> 9*Shifts
+            :/*D == NORTHWEST*/(shift_mask & bb) << 7*Shifts;
     }
     
     constexpr BB64 operator&(const BB64& other) const {
@@ -96,7 +100,7 @@ public:
         return BB64(~bb);
     }
 
-    constexpr operator bool() const {
+    constexpr explicit operator bool() const {
         return bb;
     }
 
@@ -106,16 +110,16 @@ public:
     private:
     template<Direction D, U8 Shifts>
     static constexpr BB64 can_dir_shift_bb() {
-        static_assert((Shifts < 8) && (Shifts > 0));
+        static_assert((D < NUM_DIRECTIONS) && (Shifts < 8) && (Shifts > 0));
         return D == NORTH ? ~0ULL
-            : D == SOUTH ? ~0ULL
-            : D == EAST  ? FILLED_COLS[7-Shifts]
-            : D == WEST  ? FILLED_COLS[7-Shifts] << Shifts
+             : D == SOUTH ? ~0ULL
+             : D == EAST  ? FILLED_COLS[7-Shifts]
+             : D == WEST  ? FILLED_COLS[7-Shifts] << Shifts
 
-            : D == NORTHEAST ? FILLED_COLS[7-Shifts]
-            : D == SOUTHEAST ? FILLED_COLS[7-Shifts]
-            : D == SOUTHWEST ? FILLED_COLS[7-Shifts] << Shifts
-            :/*D == NORTHWEST*/FILLED_COLS[7-Shifts] << Shifts;
+             : D == NORTHEAST ? FILLED_COLS[7-Shifts]
+             : D == SOUTHEAST ? FILLED_COLS[7-Shifts]
+             : D == SOUTHWEST ? FILLED_COLS[7-Shifts] << Shifts
+             :/*D == NORTHWEST*/FILLED_COLS[7-Shifts] << Shifts;
     }
 };
 

@@ -38,4 +38,9 @@ public:
          piece_to(piece_to),
          move_flag(move_flag),
          is_capture(is_capture) {}
+    
+    friend std::ostream& operator<<(std::ostream& os, const Move& m) {
+        os << square_str(m.from) << (m.is_capture ? 'x' : '-') << square_str(m.to);
+        return os;
+    }
 };
