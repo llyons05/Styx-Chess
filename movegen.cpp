@@ -1,14 +1,9 @@
 #include "movegen.hpp"
 
-/* Generate a vector with all the legal moves in this position.
-@param expected_best
-    The index of the expected best move
-@return
-    A reference to a vector with all the legal moves.
-*/
 template <eColor C>
 std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
+    gen_knight_moves<C>();
     return movelist;
 }
 
@@ -36,11 +31,20 @@ void Move_Generator::gen_pawn_moves() {
     while (!pawns.empty()) {
         eSquare s = pawns.pop();
         BB64 p(s);
-        BB64 valid_moves = p.shift<forward>();
-        valid_moves &= ~bbs.all();
-        valid_moves |= (valid_moves & ROWS[relative_row(C, 2)]).shift<forward>();
+        BB64 valid_moves = p.shift<forward>() & ~bbs.all();
+        valid_moves |= (valid_moves & ROWS[relative_row(C, 2)]).shift<forward>() & ~bbs.all();
         valid_moves |= (p.shift<take1>() | p.shift<take2>()) & bbs[!C];
         write_moves(PAWN, s, valid_moves);
+    }
+}
+
+template <eColor C>
+void Move_Generator::gen_knight_moves() {
+    BB64 knights = bbs[C, KNIGHT];
+    while (!knights.empty()) {
+        eSquare s = knights.pop();
+        BB64 valid_moves = knight_moves[s] & ~bbs[C];
+        write_moves(KNIGHT, s, valid_moves);
     }
 }
 

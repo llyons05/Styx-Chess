@@ -57,11 +57,14 @@ eColor Bitboards::color_at(eSquare square) const {
 
 ePieceType Bitboards::piece_at(eColor color, eSquare square) const {
     assert(color != NUM_COLORS);
+    if (!color_bbs[color].filled(square))
+        return NUM_PIECE_TYPES;
 
     for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++)
         if (piece_bbs[color][pt].filled(square))
             return pt;
-    return NUM_PIECE_TYPES;
+
+    assert(false);
 }
 
 

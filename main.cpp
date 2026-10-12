@@ -11,7 +11,6 @@ int main() {
 
     while (true) {
         Move_Generator mg(board);
-        std::cout << mg.movelist.size() << " legal moves\n";
         for (int i = 0; i < mg.movelist.size(); i++) {
             std::cout << i << ": " << mg.movelist[i] << ", ";
         }

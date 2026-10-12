@@ -87,7 +87,7 @@ enum eSquare : U8 {
 
 constexpr eSquare operator++(eSquare& square, int) {
     eSquare temp = square;
-    square = static_cast<eSquare>((square + 1) % (NULL_SQUARE + 1));
+    square = static_cast<eSquare>((square + 1) % (NULL_SQUARE));
     return temp;
 }
 
