@@ -4,6 +4,7 @@ template <eColor C>
 std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
     gen_knight_moves<C>();
+    gen_king_moves<C>();
     return movelist;
 }
 
@@ -46,6 +47,15 @@ void Move_Generator::gen_knight_moves() {
         BB64 valid_moves = knight_moves[s] & ~bbs[C];
         write_moves(KNIGHT, s, valid_moves);
     }
+}
+
+template <eColor C>
+void Move_Generator::gen_king_moves() {
+    BB64 king = bbs[C, KING];
+    eSquare s = king.pop();
+    BB64 valid_moves = king_moves[s] & ~bbs[C];
+    write_moves(KING, s, valid_moves);
+    assert(king.empty());
 }
 
 template std::vector<Move>& Move_Generator::gen_moves<WHITE>();
