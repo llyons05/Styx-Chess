@@ -26,6 +26,7 @@ Bitboards::Bitboards() {
                 put_piece(s, Piece(color, pt));
             }
         }
+    castling_rights = CASTLE_WK | CASTLE_WQ | CASTLE_BK | CASTLE_BQ;
     stm = WHITE;
 }
 
@@ -39,6 +40,7 @@ Bitboards::Bitboards(const Bitboards& other) {
                 put_piece(s, Piece(color, pt));
             }
         }
+    castling_rights = other.castling_rights;
     stm = other.stm;
 }
 

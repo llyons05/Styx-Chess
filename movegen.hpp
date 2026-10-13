@@ -21,7 +21,7 @@ public:
     std::vector<Move> movelist;
     BB64 destinations;
 
-    static bool is_attacked(const Board& board, eColor attackers, eSquare square);
+    static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
 private:
     const Board& board;
     const Bitboards& bbs;
@@ -29,7 +29,7 @@ private:
     template<eColor C>
     std::vector<Move>& gen_moves();
 
-    void write_moves(ePieceType piece, eSquare from, BB64 to);
+    void write_moves(ePieceType piece_from, ePieceType piece_to, eSquare from, BB64 to, eSpecialMoveFlags flag);
 
     template<eColor C>
     void gen_pawn_moves();
