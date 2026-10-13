@@ -135,6 +135,7 @@ class Bitboards {
 public:
     BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
     BB64 color_bbs[NUM_COLORS];
+    Piece pieces[64];
     eColor side_to_move;
     U8 castling_rights;
     U64 hash_key;
@@ -145,7 +146,6 @@ public:
     Piece handle_move(const Move& move);
 
     Piece piece_at(eSquare square) const;
-    ePieceType piece_at(eColor color, eSquare square) const;
     eColor color_at(eSquare square) const;
 
     BB64 all() {
@@ -161,8 +161,7 @@ public:
     }
 
 private:
-    inline void pickup_piece(eSquare square, Piece piece);
-    inline Piece pickup_piece(eSquare square, eColor color);
+    inline Piece pickup_piece(eSquare square);
     inline Piece put_piece(eSquare square, Piece piece);
 };
 
