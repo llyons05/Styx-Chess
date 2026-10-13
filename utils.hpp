@@ -97,6 +97,15 @@ constexpr std::string square_str(eSquare square) {
     return "abcdefgh"[col] + std::to_string(row+1);
 }
 
+constexpr eSquare str_to_square(std::string str) {
+    int col = str[0] - 'a';
+    int row = str[1] - '1';
+    if (row < 0 || row > 7)
+        return NULL_SQUARE;
+    if (col < 0 || col > 7)
+        return NULL_SQUARE;
+    return eSquare(row*8 + col);
+}
 
 enum File : U8 {
     FILE_A,
@@ -170,4 +179,17 @@ inline Num_Type get_bounded_num(std::string prompt, Num_Type lower_inclusive = s
     }
     std::cout << "\n";
     return in;
+}
+
+inline eSquare get_valid_square() {
+    std::string str;
+    std::cout << "Input the square to move to: ";
+    std::cin >> str;
+    while (std::cin.fail() || (str.length() > 2) || (str_to_square(str) == NULL_SQUARE)) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << get_colored("Nonexistent Square\n", 31) << "Input the square to move to: ";
+        std::cin >> str;
+    }
+    return str_to_square(str);
 }
