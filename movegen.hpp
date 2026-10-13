@@ -11,7 +11,7 @@ const int MAX_MOVES = 218;
 
 class Move_Generator {
 public:
-    Move_Generator(Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
+    Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
             gen_moves<WHITE>();
@@ -21,10 +21,10 @@ public:
     std::vector<Move> movelist;
     BB64 destinations;
 
-    static bool is_attacked(Board& board, eSquare square);
+    static bool is_attacked(const Board& board, eColor attackers, eSquare square);
 private:
-    Board& board;
-    Bitboards& bbs;
+    const Board& board;
+    const Bitboards& bbs;
 
     template<eColor C>
     std::vector<Move>& gen_moves();
@@ -41,10 +41,10 @@ private:
     void gen_king_moves();
 
     template<Direction D>
-    static BB64 valid_sliding_moves(BB64 pieces, Board& board);
+    static BB64 valid_sliding_moves(BB64 pieces, const Board& board, eColor color);
 
     template <eColor C>
-    static BB64 pawn_attacks(Board& board);
+    static BB64 pawn_attacks(const Board& board);
 };
 
 

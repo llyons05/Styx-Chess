@@ -9,13 +9,20 @@
 int main() {
     Board board;
     board.print();
-    std::vector<Move> move_history;
+    std::vector<std::pair<Move, Piece>> move_history;
 
     while (true) {
         bool undo = false;
         Move_Generator mg(board);
-        if (mg.movelist.empty()) {
-            std::cout << "Game Over!\n";
+        int legal_movecount = 0;
+        for (Move& move : mg.movelist) {
+            Piece p = board.move(move);
+            if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
+                legal_movecount++;
+            board.undo(move, p);
+        }
+        if (legal_movecount == 0) {
+            std::cout << "GAME OVER!\n";
             break;
         }
         eSquare square = NULL_SQUARE;
@@ -28,15 +35,19 @@ int main() {
                 break;
             }
             for (Move& move : mg.movelist) {
-                if (move.to == square)
-                    legal_moves.push_back(move);
+                if (move.to == square) {
+                    Piece p = board.move(move);
+                    if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
+                        legal_moves.push_back(move);
+                    board.undo(move, p);
+                }
             }
             if (legal_moves.empty())
-                std::cout << get_colored("No moves to " + square_str(square) + "\n", 31);
+                std::cout << get_colored("No legal moves to " + square_str(square) + "\n", 31);
         }
         if (undo) {
             if (!move_history.empty()) {
-                board.undo(move_history.back());
+                board.undo(move_history.back().first, move_history.back().second);
                 move_history.pop_back();
                 board.print();
             }
@@ -51,8 +62,16 @@ int main() {
             move_index = get_bounded_num<int>("Type move id: ", 0, legal_moves.size());
         }
         Move m = legal_moves[move_index];
-        board.move(m);
-        move_history.push_back(m);
+        move_history.push_back({m, board.move(m)});
         board.print();
     }
+
+    if (Move_Generator::is_attacked(board, !board.stm(), board.bbs.king_sq(board.stm()))) {
+        if (board.stm() == WHITE)
+            std::cout << "BLACK WINS\n";
+        else
+            std::cout << "WHITE WINS\n";
+    }
+    else
+        std::cout << "STALEMATE\n";
 }

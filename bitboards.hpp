@@ -144,41 +144,45 @@ public:
     Bitboards(const Bitboards& other);
 
     Piece handle_move(const Move& move);
-    void undo_move(const Move& move);
+    void undo_move(const Move& move, Piece taken_piece);
 
     Piece piece_at(eSquare square) const;
     eColor color_at(eSquare square) const;
 
-    BB64 all() {
+    bool occupied(eSquare square) const {
+        return !pieces[square].is_null();
+    }
+
+    BB64 all() const {
         return color_bbs[WHITE] | color_bbs[BLACK];
     }
 
-    BB64 stm_bb() {
+    const BB64& stm_bb() const {
         return color_bbs[stm];
     }
 
-    BB64 stm_bb(ePieceType pt) {
+    const BB64& stm_bb(ePieceType pt) const {
         return piece_bbs[stm][pt];
     }
 
-    BB64 opp_bb() {
+    const BB64& opp_bb() const {
         return color_bbs[!stm];
     }
 
-    BB64 opp_bb(ePieceType pt) {
+    const BB64& opp_bb(ePieceType pt) const {
         return piece_bbs[!stm][pt];
     }
 
-    BB64& operator[](eColor color) {
+    const BB64& operator[](eColor color) const {
         return color_bbs[color];
     }
 
-    BB64& operator[](eColor color, ePieceType piece) {
+    const BB64& operator[](eColor color, ePieceType piece) const {
         return piece_bbs[color][piece];
     }
 
-    eSquare king_sq(eColor color) {
-        return piece_bbs[color][KING].pop();
+    eSquare king_sq(eColor color) const {
+        return piece_bbs[color][KING].lsb();
     }
 
 private:

@@ -17,8 +17,8 @@ public:
         return bbs.stm;
     }
 
-    Piece move(Move& m);
-    void undo(Move& m);
+    Piece move(const Move& m);
+    void undo(const Move& m, Piece taken_piece);
 
     void reset();
     void print();

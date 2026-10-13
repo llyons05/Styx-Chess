@@ -61,10 +61,12 @@ Piece Bitboards::handle_move(const Move& move) {
     return taken_piece;
 }
 
-void Bitboards::undo_move(const Move& move) {
+void Bitboards::undo_move(const Move& move, Piece taken_piece) {
     stm = !stm;
     pickup_piece(move.to);
     put_piece(move.from, Piece(stm, move.piece_from));
+    if (!taken_piece.is_null())
+        put_piece(move.to, taken_piece);
 }
 
 // Put a piece down on the board. If there was another piece on that square previously,
