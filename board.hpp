@@ -14,7 +14,7 @@ public:
     Board();
 
     eColor stm() const {
-        return bbs.side_to_move;
+        return bbs.stm;
     }
 
     Piece move(Move& m);

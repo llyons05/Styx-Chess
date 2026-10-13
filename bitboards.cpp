@@ -26,7 +26,7 @@ Bitboards::Bitboards() {
                 put_piece(s, Piece(color, pt));
             }
         }
-    side_to_move = WHITE;
+    stm = WHITE;
 }
 
 
@@ -39,7 +39,7 @@ Bitboards::Bitboards(const Bitboards& other) {
                 put_piece(s, Piece(color, pt));
             }
         }
-    side_to_move = other.side_to_move;
+    stm = other.stm;
 }
 
 
@@ -55,10 +55,10 @@ eColor Bitboards::color_at(eSquare square) const {
 
 
 Piece Bitboards::handle_move(const Move& move) {
-    Piece moved_piece = Piece(side_to_move, move.piece_from);
+    Piece moved_piece = Piece(stm, move.piece_from);
     pickup_piece(move.from);
     Piece taken_piece = put_piece(move.to, moved_piece);
-    side_to_move = !side_to_move;
+    stm = !stm;
     return taken_piece;
 }
 

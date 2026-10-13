@@ -136,7 +136,7 @@ public:
     BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
     BB64 color_bbs[NUM_COLORS];
     Piece pieces[64];
-    eColor side_to_move;
+    eColor stm;
     U8 castling_rights;
     U64 hash_key;
 
@@ -152,12 +152,32 @@ public:
         return color_bbs[WHITE] | color_bbs[BLACK];
     }
 
+    BB64 stm_bb() {
+        return color_bbs[stm];
+    }
+
+    BB64 stm_bb(ePieceType pt) {
+        return piece_bbs[stm][pt];
+    }
+
+    BB64 opp_bb() {
+        return color_bbs[!stm];
+    }
+
+    BB64 opp_bb(ePieceType pt) {
+        return piece_bbs[!stm][pt];
+    }
+
     BB64& operator[](eColor color) {
         return color_bbs[color];
     }
 
     BB64& operator[](eColor color, ePieceType piece) {
         return piece_bbs[color][piece];
+    }
+
+    eSquare king_sq(eColor color) {
+        return piece_bbs[color][KING].pop();
     }
 
 private:

@@ -33,5 +33,5 @@ void Board::print() {
         std::cout << "\n";
     }
     std::cout << "\n\ta b c d e f g h\n";
-    std::cout << ((bbs.side_to_move == WHITE) ? "White" : "Black") << " to move\n";
+    std::cout << ((bbs.stm == WHITE) ? "White" : "Black") << " to move\n";
 }

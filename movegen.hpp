@@ -21,6 +21,7 @@ public:
     std::vector<Move> movelist;
     BB64 destinations;
 
+    static bool is_attacked(Board& board, eSquare square);
 private:
     Board& board;
     Bitboards& bbs;
@@ -32,19 +33,18 @@ private:
 
     template<eColor C>
     void gen_pawn_moves();
-    template<eColor C>
+
     void gen_bishop_moves();
-    template<eColor C>
     void gen_knight_moves();
-    template<eColor C>
     void gen_rook_moves();
-    template<eColor C>
     void gen_queen_moves();
-    template<eColor C>
     void gen_king_moves();
 
-    template<eColor C, Direction D>
-    BB64 valid_sliding_moves(eSquare s);
+    template<Direction D>
+    static BB64 valid_sliding_moves(BB64 pieces, Board& board);
+
+    template <eColor C>
+    static BB64 pawn_attacks(Board& board);
 };
 
 
