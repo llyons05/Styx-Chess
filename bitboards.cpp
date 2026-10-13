@@ -27,6 +27,7 @@ Bitboards::Bitboards() {
             }
         }
     castling_rights = CASTLE_WK | CASTLE_WQ | CASTLE_BK | CASTLE_BQ;
+    ep_square = NULL_SQUARE;
     stm = WHITE;
 }
 
@@ -41,6 +42,7 @@ Bitboards::Bitboards(const Bitboards& other) {
             }
         }
     castling_rights = other.castling_rights;
+    ep_square = other.ep_square;
     stm = other.stm;
 }
 
@@ -59,12 +61,36 @@ eColor Bitboards::color_at(eSquare square) const {
 Piece Bitboards::handle_move(const Move& move) {
     pickup_piece(move.from);
     Piece taken_piece = put_piece(move.to, Piece(stm, move.piece_to));
+    if (move.is_castle()) {
+        if (move.to == G1)      // White kingside
+            put_piece(F1, pickup_piece(H1));
+        else if (move.to == C1) // White queenside
+            put_piece(D1, pickup_piece(A1));
+        else if (move.to == G8) // Black kingside
+            put_piece(F8, pickup_piece(H8));
+        else if (move.to == C8) // Black queenside
+            put_piece(D8, pickup_piece(A8));
+    }
+
+    update_castling_rights(move);
     stm = !stm;
     return taken_piece;
 }
 
 void Bitboards::undo_move(const Move& move) {
     stm = !stm;
+    castling_rights = move.prev_castle_flags;
+    if (move.is_castle()) {
+        if (move.to == G1)     // White kingside
+            put_piece(H1, pickup_piece(F1));
+        else if (move.to == C1) // White queenside
+            put_piece(A1, pickup_piece(D1));
+        else if (move.to == G8) // Black kingside
+            put_piece(H8, pickup_piece(F8));
+        else if (move.to == C8) // Black queenside
+            put_piece(A8, pickup_piece(D8));
+    }
+
     pickup_piece(move.to);
     put_piece(move.from, Piece(stm, move.piece_from));
     if (move.piece_captured != NUM_PIECE_TYPES)
@@ -94,4 +120,52 @@ inline Piece Bitboards::pickup_piece(eSquare square) {
         pieces[square] = Piece();
     }
     return piece;
+}
+
+
+void Bitboards::update_castling_rights(const Move& m) {
+    switch (m.from) {
+    case H1:
+        castling_rights &= ~CASTLE_WK;
+        break;
+    case E1:
+        castling_rights &= ~(CASTLE_WK|CASTLE_WQ);
+        break;
+    case A1:
+        castling_rights &= ~CASTLE_WQ;
+        break;
+    case H8:
+        castling_rights &= ~CASTLE_BK;
+        break;
+    case E8:
+        castling_rights &= ~(CASTLE_BK|CASTLE_BQ);
+        break;
+    case A8:
+        castling_rights &= ~CASTLE_BQ;
+        break;
+    default:
+        break;
+    }
+    switch (m.to) {
+    case H1:
+        castling_rights &= ~CASTLE_WK;
+        break;
+    case E1:
+        castling_rights &= ~(CASTLE_WK|CASTLE_WQ);
+        break;
+    case A1:
+        castling_rights &= ~CASTLE_WQ;
+        break;
+    case H8:
+        castling_rights &= ~CASTLE_BK;
+        break;
+    case E8:
+        castling_rights &= ~(CASTLE_BK|CASTLE_BQ);
+        break;
+    case A8:
+        castling_rights &= ~CASTLE_BQ;
+        break;
+    default:
+        break;
+    }
 }

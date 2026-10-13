@@ -130,8 +130,7 @@ enum eCastle : U8 {
 
 enum eSpecialMoveFlags : U8 {
     MFLAG_NORMAL,
-    MFLAG_CASTLE_K,
-    MFLAG_CASTLE_Q,
+    MFLAG_CASTLE,
     MFLAG_EP,
     MFLAG_PROMO,
     MFLAG_NULLMOVE
@@ -186,12 +185,13 @@ inline eSquare get_valid_square() {
     std::string str;
     std::cout << "Input the square to move to: ";
     std::cin >> str;
-    if (str == "undo")
-        return NULL_SQUARE;
     while (std::cin.fail() || (str.length() > 2) || (str_to_square(str) == NULL_SQUARE)) {
+        if (str == "undo")
+            return NULL_SQUARE;
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << get_colored("Nonexistent Square\n", 31) << "Input the square to move to: ";
+        str.clear();
         std::cin >> str;
     }
     return str_to_square(str);
