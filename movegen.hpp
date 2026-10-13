@@ -41,6 +41,9 @@ private:
     void gen_queen_moves();
     template<eColor C>
     void gen_king_moves();
+
+    template<eColor C, Direction D>
+    BB64 valid_sliding_moves(eSquare s);
 };
 
 

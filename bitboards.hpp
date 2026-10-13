@@ -100,6 +100,14 @@ public:
         return BB64(~bb);
     }
 
+    constexpr bool operator==(U64 n) const {
+        return bb == n;
+    }
+
+    constexpr bool operator!=(U64 n) const {
+        return bb != n;
+    }
+
     constexpr explicit operator bool() const {
         return bb;
     }

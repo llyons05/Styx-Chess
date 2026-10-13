@@ -3,6 +3,7 @@
 template <eColor C>
 std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
+    gen_bishop_moves<C>();
     gen_knight_moves<C>();
     gen_king_moves<C>();
     return movelist;
@@ -23,6 +24,19 @@ void Move_Generator::write_moves(ePieceType piece, eSquare from, BB64 to) {
     }
 }
 
+template<eColor C, Direction D>
+BB64 Move_Generator::valid_sliding_moves(eSquare s) {
+    BB64 valid_moves = 0;
+    BB64 next = BB64(s).shift<D>();
+    while (!next.empty() && ((next & bbs[C]) == 0)) {
+        valid_moves |= next;
+        if ((next & bbs[!C]) != 0)
+            break;
+        next = next.shift<D>();
+    }
+    return valid_moves;
+}
+
 template <eColor C>
 void Move_Generator::gen_pawn_moves() {
     constexpr Direction forward = (C == WHITE) ? NORTH : SOUTH;
@@ -36,6 +50,20 @@ void Move_Generator::gen_pawn_moves() {
         valid_moves |= (valid_moves & ROWS[relative_row(C, 2)]).shift<forward>() & ~bbs.all();
         valid_moves |= (p.shift<take1>() | p.shift<take2>()) & bbs[!C];
         write_moves(PAWN, s, valid_moves);
+    }
+}
+
+template <eColor C>
+void Move_Generator::gen_bishop_moves() {
+    BB64 bishops = bbs[C, BISHOP];
+    while (!bishops.empty()) {
+        eSquare s = bishops.pop();
+        BB64 valid_moves = 0;
+        valid_moves |= valid_sliding_moves<C, NORTHEAST>(s);
+        valid_moves |= valid_sliding_moves<C, SOUTHEAST>(s);
+        valid_moves |= valid_sliding_moves<C, SOUTHWEST>(s);
+        valid_moves |= valid_sliding_moves<C, NORTHWEST>(s);
+        write_moves(BISHOP, s, valid_moves);
     }
 }
 
