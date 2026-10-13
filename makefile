@@ -1,4 +1,4 @@
-CXXFLAGS = -O0 -Wall -std=c++23
+CXXFLAGS = -g -O0 -Wall -std=c++23
 SRC_FILES = bitboards.cpp main.cpp board.cpp movegen.cpp
 
 main:
