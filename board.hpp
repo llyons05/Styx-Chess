@@ -17,7 +17,7 @@ public:
         return bbs.side_to_move;
     }
 
-    void move(Move& m);
+    Piece move(Move& m);
 
     void reset();
     void print();

@@ -11,7 +11,7 @@ int main() {
 
     while (true) {
         Move_Generator mg(board);
-        for (int i = 0; i < mg.movelist.size(); i++) {
+        for (size_t i = 0; i < mg.movelist.size(); i++) {
             std::cout << i << ": " << mg.movelist[i] << ", ";
         }
         std::cout << "\n";

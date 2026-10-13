@@ -68,11 +68,12 @@ ePieceType Bitboards::piece_at(eColor color, eSquare square) const {
 }
 
 
-void Bitboards::handle_move(const Move& move) {
+Piece Bitboards::handle_move(const Move& move) {
     Piece moved_piece = Piece(side_to_move, move.piece_from);
     pickup_piece(move.from, moved_piece);
     Piece taken_piece = put_piece(move.to, moved_piece);
     side_to_move = !side_to_move;
+    return taken_piece;
 }
 
 

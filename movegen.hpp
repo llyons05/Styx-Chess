@@ -11,7 +11,7 @@ const int MAX_MOVES = 218;
 
 class Move_Generator {
 public:
-    Move_Generator(Board& board) : movelist(), board(board), bbs(board.bbs) {
+    Move_Generator(Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
             gen_moves<WHITE>();
@@ -19,6 +19,7 @@ public:
             gen_moves<BLACK>();
     }
     std::vector<Move> movelist;
+    BB64 destinations;
 
 private:
     Board& board;

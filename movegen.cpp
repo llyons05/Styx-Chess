@@ -5,11 +5,13 @@ std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
     gen_bishop_moves<C>();
     gen_knight_moves<C>();
+    gen_rook_moves<C>();
     gen_king_moves<C>();
     return movelist;
 }
 
 void Move_Generator::write_moves(ePieceType piece, eSquare from, BB64 to) {
+    destinations |= to;
     while(to) {
         eSquare dest = to.pop();
         movelist.push_back(Move(
@@ -74,6 +76,20 @@ void Move_Generator::gen_knight_moves() {
         eSquare s = knights.pop();
         BB64 valid_moves = knight_moves[s] & ~bbs[C];
         write_moves(KNIGHT, s, valid_moves);
+    }
+}
+
+template <eColor C>
+void Move_Generator::gen_rook_moves() {
+    BB64 rooks = bbs[C, ROOK];
+    while (!rooks.empty()) {
+        eSquare s = rooks.pop();
+        BB64 valid_moves = 0;
+        valid_moves |= valid_sliding_moves<C, NORTH>(s);
+        valid_moves |= valid_sliding_moves<C, EAST>(s);
+        valid_moves |= valid_sliding_moves<C, SOUTH>(s);
+        valid_moves |= valid_sliding_moves<C, WEST>(s);
+        write_moves(ROOK, s, valid_moves);
     }
 }
 

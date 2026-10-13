@@ -142,7 +142,7 @@ public:
     Bitboards();
     Bitboards(const Bitboards& other);
 
-    void handle_move(const Move& move);
+    Piece handle_move(const Move& move);
 
     Piece piece_at(eSquare square) const;
     ePieceType piece_at(eColor color, eSquare square) const;

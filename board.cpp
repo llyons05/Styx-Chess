@@ -12,8 +12,8 @@ void Board::reset() {
     
 }
 
-void Board::move(Move& m) {
-    bbs.handle_move(m);
+Piece Board::move(Move& m) {
+    return bbs.handle_move(m);
 }
 
 
