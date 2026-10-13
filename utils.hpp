@@ -130,9 +130,10 @@ enum eCastle : U8 {
 
 enum eSpecialMoveFlags : U8 {
     MFLAG_NORMAL,
-    MFLAG_CASTLE,
+    MFLAG_CASTLE_K,
+    MFLAG_CASTLE_Q,
     MFLAG_EP,
-    MFLAG_PROMOTION,
+    MFLAG_PROMO,
     MFLAG_NULLMOVE
 };
 

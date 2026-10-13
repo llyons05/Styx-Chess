@@ -9,17 +9,17 @@
 int main() {
     Board board;
     board.print();
-    std::vector<std::pair<Move, Piece>> move_history;
+    std::vector<Move> move_history;
 
     while (true) {
         bool undo = false;
         Move_Generator mg(board);
         int legal_movecount = 0;
         for (Move& move : mg.movelist) {
-            Piece p = board.move(move);
+            board.move(move);
             if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                 legal_movecount++;
-            board.undo(move, p);
+            board.undo(move);
         }
         if (legal_movecount == 0) {
             std::cout << "GAME OVER!\n";
@@ -36,10 +36,10 @@ int main() {
             }
             for (Move& move : mg.movelist) {
                 if (move.to == square) {
-                    Piece p = board.move(move);
+                    board.move(move);
                     if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                         legal_moves.push_back(move);
-                    board.undo(move, p);
+                    board.undo(move);
                 }
             }
             if (legal_moves.empty())
@@ -47,7 +47,7 @@ int main() {
         }
         if (undo) {
             if (!move_history.empty()) {
-                board.undo(move_history.back().first, move_history.back().second);
+                board.undo(move_history.back());
                 move_history.pop_back();
                 board.print();
             }
@@ -62,7 +62,8 @@ int main() {
             move_index = get_bounded_num<int>("Type move id: ", 0, legal_moves.size());
         }
         Move m = legal_moves[move_index];
-        move_history.push_back({m, board.move(m)});
+        board.move(m);
+        move_history.push_back(m);
         board.print();
     }
 

@@ -18,7 +18,7 @@ public:
     }
 
     Piece move(const Move& m);
-    void undo(const Move& m, Piece taken_piece);
+    void undo(const Move& m);
 
     void reset();
     void print();
