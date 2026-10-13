@@ -55,13 +55,17 @@ eColor Bitboards::color_at(eSquare square) const {
 
 
 Piece Bitboards::handle_move(const Move& move) {
-    Piece moved_piece = Piece(stm, move.piece_from);
     pickup_piece(move.from);
-    Piece taken_piece = put_piece(move.to, moved_piece);
+    Piece taken_piece = put_piece(move.to, Piece(stm, move.piece_to));
     stm = !stm;
     return taken_piece;
 }
 
+void Bitboards::undo_move(const Move& move) {
+    stm = !stm;
+    pickup_piece(move.to);
+    put_piece(move.from, Piece(stm, move.piece_from));
+}
 
 // Put a piece down on the board. If there was another piece on that square previously,
 // return the type of piece that was removed.

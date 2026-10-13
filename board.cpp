@@ -16,6 +16,10 @@ Piece Board::move(Move& m) {
     return bbs.handle_move(m);
 }
 
+void Board::undo(Move& m) {
+    bbs.undo_move(m);
+}
+
 
 void Board::print() {
     const char piece_chars[2][8] = {{'P', 'B', 'N', 'R', 'Q', 'K', '-', '-'}, {'p', 'b', 'n', 'r', 'q', 'k', '-', '-'}};

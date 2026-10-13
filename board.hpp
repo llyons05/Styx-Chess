@@ -18,6 +18,7 @@ public:
     }
 
     Piece move(Move& m);
+    void undo(Move& m);
 
     void reset();
     void print();

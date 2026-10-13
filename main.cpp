@@ -9,8 +9,10 @@
 int main() {
     Board board;
     board.print();
+    std::vector<Move> move_history;
 
     while (true) {
+        bool undo = false;
         Move_Generator mg(board);
         if (mg.movelist.empty()) {
             std::cout << "Game Over!\n";
@@ -21,12 +23,24 @@ int main() {
         while (legal_moves.empty()) {
             legal_moves.clear();
             square = get_valid_square();
+            if (square == NULL_SQUARE) {
+                undo = true;
+                break;
+            }
             for (Move& move : mg.movelist) {
                 if (move.to == square)
                     legal_moves.push_back(move);
             }
             if (legal_moves.empty())
                 std::cout << get_colored("No moves to " + square_str(square) + "\n", 31);
+        }
+        if (undo) {
+            if (!move_history.empty()) {
+                board.undo(move_history.back());
+                move_history.pop_back();
+                board.print();
+            }
+            continue;
         }
         int move_index = 0;
         if (legal_moves.size() > 1) {
@@ -38,8 +52,7 @@ int main() {
         }
         Move m = legal_moves[move_index];
         board.move(m);
+        move_history.push_back(m);
         board.print();
-        std::string line;
-        std::getline(std::cin, line);
     }
 }

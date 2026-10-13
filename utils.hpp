@@ -185,6 +185,8 @@ inline eSquare get_valid_square() {
     std::string str;
     std::cout << "Input the square to move to: ";
     std::cin >> str;
+    if (str == "undo")
+        return NULL_SQUARE;
     while (std::cin.fail() || (str.length() > 2) || (str_to_square(str) == NULL_SQUARE)) {
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
