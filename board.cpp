@@ -16,8 +16,8 @@ Piece Board::move(const Move& m) {
     return bbs.handle_move(m);
 }
 
-void Board::undo(const Move& m, Piece taken_piece) {
-    bbs.undo_move(m, taken_piece);
+void Board::undo(const Move& m) {
+    bbs.undo_move(m);
 }
 
 

@@ -144,7 +144,7 @@ public:
     Bitboards(const Bitboards& other);
 
     Piece handle_move(const Move& move);
-    void undo_move(const Move& move, Piece taken_piece);
+    void undo_move(const Move& move);
 
     Piece piece_at(eSquare square) const;
     eColor color_at(eSquare square) const;

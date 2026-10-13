@@ -20,8 +20,8 @@ void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSq
             dest,
             piece_from,
             piece_to,
+            (flag == MFLAG_EP) ? PAWN : (bbs.opp_bb().filled(dest) ? bbs.piece_at(dest).pt : NUM_PIECE_TYPES),
             flag,
-            board.bbs.opp_bb().filled(dest) || (flag == MFLAG_EP),
             movelist.size()
         ));
     }
@@ -108,10 +108,9 @@ void Move_Generator::gen_queen_moves() {
 
 void Move_Generator::gen_king_moves() {
     BB64 king = bbs.stm_bb(KING);
-    eSquare s = king.pop();
+    eSquare s = king.lsb();
     BB64 valid_moves = king_moves[s] & ~bbs.stm_bb();
     write_moves(KING, KING, s, valid_moves, MFLAG_NORMAL);
-    assert(king.empty());
 }
 
 
