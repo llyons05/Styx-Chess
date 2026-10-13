@@ -22,7 +22,8 @@ void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSq
             piece_to,
             (flag == MFLAG_EP) ? PAWN : (bbs.opp_bb().filled(dest) ? bbs.piece_at(dest).pt : NUM_PIECE_TYPES),
             flag,
-            movelist.size()
+            bbs.castling_rights,
+            bbs.ep_square
         ));
     }
 }
@@ -111,6 +112,26 @@ void Move_Generator::gen_king_moves() {
     eSquare s = king.lsb();
     BB64 valid_moves = king_moves[s] & ~bbs.stm_bb();
     write_moves(KING, KING, s, valid_moves, MFLAG_NORMAL);
+    if (bbs.stm == WHITE) {
+        if ((bbs.castling_rights & CASTLE_WK)
+         && bbs.empty(BB64(F1) | BB64(G1))
+         && !is_attacked(board, !bbs.stm, BB64(E1) | BB64(F1) | BB64(G1)))
+            write_moves(KING, KING, s, G1, MFLAG_CASTLE);
+        if ((bbs.castling_rights & CASTLE_WQ)
+         && bbs.empty(BB64(D1) | BB64(C1) | BB64(B1))
+         && !is_attacked(board, !bbs.stm, BB64(E1) | BB64(D1) | BB64(C1)))
+            write_moves(KING, KING, s, C1, MFLAG_CASTLE);
+    }
+    else {
+        if ((bbs.castling_rights & CASTLE_BK)
+         && bbs.empty(BB64(F8) | BB64(G8))
+         && !is_attacked(board, !bbs.stm, BB64(E8) | BB64(F8) | BB64(G8)))
+            write_moves(KING, KING, s, G8, MFLAG_CASTLE);
+        if ((bbs.castling_rights & CASTLE_BQ)
+         && bbs.empty(BB64(D8) | BB64(C8) | BB64(B8))
+         && !is_attacked(board, !bbs.stm, BB64(E8) | BB64(D8) | BB64(C8)))
+            write_moves(KING, KING, s, C8, MFLAG_CASTLE);
+    }
 }
 
 
@@ -144,8 +165,6 @@ bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) 
     
     BB64 king = board.bbs[attackers, KING];
     BB64 king_threats = king_moves[king.pop()] & ~board.bbs[attackers];
-    if (attackers != board.stm())
-        (pawn_threats | knight_threats | diag_threats | straight_threats | king_threats).print();
     return (bb & king_threats) != 0;
 }
 

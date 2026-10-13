@@ -138,6 +138,7 @@ public:
     Piece pieces[64];
     eColor stm;
     U8 castling_rights;
+    eSquare ep_square;
     U64 hash_key;
 
     Bitboards();
@@ -149,8 +150,12 @@ public:
     Piece piece_at(eSquare square) const;
     eColor color_at(eSquare square) const;
 
-    bool occupied(eSquare square) const {
-        return !pieces[square].is_null();
+    bool occupied(BB64 b) const {
+        return !(all() & b).empty();
+    }
+
+    bool empty(BB64 b) const {
+        return (all() & b).empty();
     }
 
     BB64 all() const {
@@ -188,6 +193,7 @@ public:
 private:
     inline Piece pickup_piece(eSquare square);
     inline Piece put_piece(eSquare square, Piece piece);
+    void update_castling_rights(const Move& m);
 };
 
 constexpr BB64 ROWS[8] = {255ULL, 255ULL << 8, 255ULL << 16, 255ULL << 24, 255ULL << 32, 255ULL << 40, 255ULL << 48, 255ULL << 56};
