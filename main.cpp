@@ -6,8 +6,12 @@
 #include <string>
 #include <vector>
 
-int main() {
-    Board board;
+int main(int argc, char* argv[]) {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+    if (argc >= 2)
+        fen = argv[1];
+
+    Board board(fen);
     board.print();
     std::vector<Move> move_history;
 
