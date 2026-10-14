@@ -53,7 +53,18 @@ void Move_Generator::gen_pawn_moves() {
         
         BB64 takes = (p.shift<take1>() | p.shift<take2>());
         valid_moves |= takes & bbs[!C];
-        write_moves(PAWN, PAWN, s, valid_moves, MFLAG_NORMAL);
+        
+        if ((p & ROWS[relative_row(C, 6)]).empty()) { // If we're not on the second-to-last row, do normal moves
+            write_moves(PAWN, PAWN, s, valid_moves, MFLAG_NORMAL);
+        }
+        else { // If we ARE on the second-to-last row, all of our moves will result in a promotion.
+            write_moves(PAWN, BISHOP, s, valid_moves, MFLAG_PROMO);
+            write_moves(PAWN, KNIGHT, s, valid_moves, MFLAG_PROMO);
+            write_moves(PAWN, ROOK, s, valid_moves, MFLAG_PROMO);
+            write_moves(PAWN, QUEEN, s, valid_moves, MFLAG_PROMO);
+        }
+
+        // En passant stuff
         if ((bbs.ep_square != NULL_SQUARE) && !(p & ROWS[relative_row(C, 4)]).empty())
             write_moves(PAWN, PAWN, s, takes & BB64(bbs.ep_square), MFLAG_EP);
     }
