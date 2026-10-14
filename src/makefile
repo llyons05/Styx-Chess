@@ -13,9 +13,11 @@ HEADER_FILES = bitboards.hpp board.hpp move.hpp movegen.hpp utils.hpp
 
 ifdef OS # Check if we are on windows
 	RD = rd /s /q
+	BUILD_DIR := windows-build
 	DIR_GUARD = if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
 else
-    RD = rm -f
+    RD = rm -rf
+	BUILD_DIR := linux-build
     DIR_GUARD = mkdir -p $(BUILD_DIR)
 endif
 
