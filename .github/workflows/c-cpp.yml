@@ -23,6 +23,9 @@ jobs:
             --slave /usr/bin/g++ g++ /usr/bin/g++-15
           sudo update-alternatives --set gcc /usr/bin/gcc-15
         shell: bash
+      - name: Print workspace
+        run: |
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" pwd ls -la
 
       - name: Ensure tests.sh is executable
         run: chmod +x ./test/tests.sh
