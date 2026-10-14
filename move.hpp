@@ -48,11 +48,11 @@ public:
     }
 
     inline bool is_nullmove() const {
-        return move_flag & MFLAG_NULLMOVE;
+        return move_flag == MFLAG_NULLMOVE;
     }
 
     inline bool is_castle() const {
-        return move_flag & MFLAG_CASTLE;
+        return move_flag == MFLAG_CASTLE;
     }
 
     inline bool is_pawn_jump() const {
@@ -60,16 +60,22 @@ public:
     }
 
     inline bool is_ep() const {
-        return move_flag & MFLAG_EP;
+        return move_flag == MFLAG_EP;
+    }
+
+    inline bool is_promo() const {
+        return move_flag == MFLAG_PROMO;
     }
     
     friend std::ostream& operator<<(std::ostream& os, const Move& m) {
         if (m.is_castle() && (m.to == G1 || m.to == G8))
             os << "O-O";
-        else if (m.is_castle() && (m.to == C1 || m.to == C8) )
+        else if (m.is_castle() && (m.to == C1 || m.to == C8))
             os << "O-O-O";
         else
             os << " BNRQK"[m.piece_from] << square_str(m.from) << (m.is_capture() ? 'x' : '-') << square_str(m.to);
+        if (m.is_promo())
+            os << "=" << " BNRQK"[m.piece_to];
         return os;
     }
 };
