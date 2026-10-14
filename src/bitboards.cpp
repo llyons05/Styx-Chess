@@ -34,14 +34,18 @@ Bitboards::Bitboards() {
 
 
 Bitboards::Bitboards(const Bitboards& other) {
-    for (eColor color = WHITE; color <= BLACK; color++)
+    std::generate(std::begin(pieces), std::end(pieces), [](){Piece();});
+    for (eColor color = WHITE; color <= BLACK; color++) {
+        color_bbs[color] = 0;
         for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++) {
+            piece_bbs[color][pt] = 0;
             BB64 pieces = other.piece_bbs[color][pt];
             while (!pieces.empty()) {
                 eSquare s = pieces.pop();
                 put_piece(s, Piece(color, pt));
             }
         }
+    }
     castling_rights = other.castling_rights;
     ep_square = other.ep_square;
     stm = other.stm;
