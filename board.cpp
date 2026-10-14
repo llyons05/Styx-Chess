@@ -4,14 +4,6 @@
 
 #include <iostream>
 
-Board::Board() : bbs() {
-    
-}
-
-void Board::reset() {
-    
-}
-
 Piece Board::move(const Move& m) {
     return bbs.handle_move(m);
 }
@@ -19,7 +11,6 @@ Piece Board::move(const Move& m) {
 void Board::undo(const Move& m) {
     bbs.undo_move(m);
 }
-
 
 void Board::print() {
     const char piece_chars[2][8] = {{'P', 'B', 'N', 'R', 'Q', 'K', '-', '-'}, {'p', 'b', 'n', 'r', 'q', 'k', '-', '-'}};

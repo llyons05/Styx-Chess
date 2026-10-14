@@ -5,13 +5,15 @@
 #include "move.hpp"
 
 #include <cstdint>
+#include <string>
 
 
 class Board {
 public:
     Bitboards bbs;
 
-    Board();
+    Board() : bbs() {};
+    Board(std::string fen) : bbs(fen) {};
 
     eColor stm() const {
         return bbs.stm;
@@ -20,6 +22,5 @@ public:
     Piece move(const Move& m);
     void undo(const Move& m);
 
-    void reset();
     void print();
 };

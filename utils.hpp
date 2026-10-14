@@ -13,6 +13,7 @@ typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
 
+typedef std::chrono::milliseconds::rep TimePoint;
 
 enum eColor : U8 {
     WHITE,
@@ -67,10 +68,35 @@ public:
     ePieceType pt : 4;
 
     constexpr Piece() : color(NUM_COLORS), pt(NUM_PIECE_TYPES) {}
+    constexpr Piece(char c) {
+        color = isupper(c) ? WHITE : BLACK;
+        switch(tolower(c)) {
+            case 'p':
+                pt = PAWN;
+                break;
+            case 'b':
+                pt = BISHOP;
+                break;
+            case 'n':
+                pt = KNIGHT;
+                break;
+            case 'r':
+                pt = ROOK;
+                break;
+            case 'q':
+                pt = QUEEN;
+                break;
+            case 'k':
+                pt = KING;
+                break;
+            default:
+                pt = NUM_PIECE_TYPES;
+                color = NUM_COLORS;
+        }
+    }
     constexpr Piece(eColor color, ePieceType pt) : color(color), pt(pt) {}
     constexpr bool is_null() const { return (color == NUM_COLORS) || (pt == NUM_PIECE_TYPES); }
 };
-
 
 enum eSquare : U8 {
     A1, B1, C1, D1, E1, F1, G1, H1,
@@ -158,8 +184,8 @@ constexpr U8 binary_to_square(U64 binary) {
     return __builtin_ctzll(binary);
 }
 
-constexpr U64 get_time() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+inline TimePoint get_time() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 inline std::string get_colored(std::string original, int color_code) {
