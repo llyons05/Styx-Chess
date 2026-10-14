@@ -34,7 +34,9 @@ Bitboards::Bitboards() {
 
 
 Bitboards::Bitboards(const Bitboards& other) {
-    std::generate(std::begin(pieces), std::end(pieces), [](){Piece();});
+    for (int i = 0; i < 64; i++)
+        pieces[i] = Piece();
+    
     for (eColor color = WHITE; color <= BLACK; color++) {
         color_bbs[color] = 0;
         for (ePieceType pt = PAWN; pt < NUM_PIECE_TYPES; pt++) {
