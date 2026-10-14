@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build deps (Linux) and g++-15
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common wget ca-certificates
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y gcc-15 g++-15 build-essential make
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 60 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-15
+          sudo update-alternatives --set gcc /usr/bin/gcc-15
+        shell: bash
+
+      - name: Ensure test.sh is executable
+        run: chmod +x ./test/test.sh
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          ./test/test.sh 2>&1 | tee test-output.log
+        shell: bash
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.log
