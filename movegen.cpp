@@ -130,21 +130,21 @@ void Move_Generator::gen_king_moves() {
     if (bbs.stm == WHITE) {
         if ((bbs.castling_rights & CASTLE_WK)
          && bbs.empty(BB64(F1) | BB64(G1))
-         && !is_attacked(board, !bbs.stm, BB64(E1) | BB64(F1) | BB64(G1)))
+         && !is_attacked(board, BLACK, BB64(E1) | BB64(F1) | BB64(G1)))
             write_moves(KING, KING, s, G1, MFLAG_CASTLE);
         if ((bbs.castling_rights & CASTLE_WQ)
          && bbs.empty(BB64(D1) | BB64(C1) | BB64(B1))
-         && !is_attacked(board, !bbs.stm, BB64(E1) | BB64(D1) | BB64(C1)))
+         && !is_attacked(board, BLACK, BB64(E1) | BB64(D1) | BB64(C1)))
             write_moves(KING, KING, s, C1, MFLAG_CASTLE);
     }
     else {
         if ((bbs.castling_rights & CASTLE_BK)
          && bbs.empty(BB64(F8) | BB64(G8))
-         && !is_attacked(board, !bbs.stm, BB64(E8) | BB64(F8) | BB64(G8)))
+         && !is_attacked(board, WHITE, BB64(E8) | BB64(F8) | BB64(G8)))
             write_moves(KING, KING, s, G8, MFLAG_CASTLE);
         if ((bbs.castling_rights & CASTLE_BQ)
          && bbs.empty(BB64(D8) | BB64(C8) | BB64(B8))
-         && !is_attacked(board, !bbs.stm, BB64(E8) | BB64(D8) | BB64(C8)))
+         && !is_attacked(board, WHITE, BB64(E8) | BB64(D8) | BB64(C8)))
             write_moves(KING, KING, s, C8, MFLAG_CASTLE);
     }
 }

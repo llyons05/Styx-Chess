@@ -49,7 +49,7 @@ Bitboards::Bitboards(const Bitboards& other) {
 
 
 Bitboards::Bitboards(std::string fen) {
-    auto square_conv = [](int s){int row = 7-(s/8); int col = 7-(s%8); return eSquare(row*8 + col);};
+    auto square_conv = [](int s){int row = 7-(s/8); int col = s%8; return eSquare(row*8 + col);};
     int curr_square = 0;
     int index = 0;
     for (; (index < int(fen.size())) && (fen[index] != ' '); index++) {
@@ -83,7 +83,7 @@ Bitboards::Bitboards(std::string fen) {
     if (ep_section[0] == '-')
         ep_square = NULL_SQUARE;
     else
-        ep_square = square_conv(std::stoi(ep_section));
+        ep_square = str_to_square(ep_section);
 }
 
 

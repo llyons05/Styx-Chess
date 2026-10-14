@@ -28,5 +28,11 @@ void Board::print() {
         std::cout << "\n";
     }
     std::cout << "\n\ta b c d e f g h\n";
-    std::cout << ((bbs.stm == WHITE) ? "White" : "Black") << " to move\n";
+    std::cout << ((bbs.stm == WHITE) ? "White" : "Black") << " to move\t";
+    std::cout << (bbs.castling_rights == 0 ? "-":"") 
+              << (bbs.castling_rights & CASTLE_WK ? "K":"")
+              << (bbs.castling_rights & CASTLE_WQ ? "Q":"")
+              << (bbs.castling_rights & CASTLE_BK ? "k":"")
+              << (bbs.castling_rights & CASTLE_BQ ? "q":"") << "\t";
+    std::cout << (bbs.ep_square == NULL_SQUARE ? "-" : square_str(bbs.ep_square)) << "\n";
 }

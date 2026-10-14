@@ -18,6 +18,10 @@ const std::map<std::string, std::vector<U64>> expected_values = {
 };
 
 U64 total_nodes = 0;
+U64 captures = 0;
+U64 en_passant = 0;
+U64 castles = 0;
+U64 promotions = 0;
 
 int get_depth() {
     return get_bounded_num<int>("Input depth to search to: ", 0, 10);
@@ -35,6 +39,12 @@ U64 perft(Board& board, int depth) {
     for (const Move& move : mg.movelist) {
         board.move(move);
         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm()))) {
+            if (depth == 1) {
+                captures += move.is_capture();
+                en_passant += move.is_ep();
+                castles += move.is_castle();
+                promotions += move.is_promo();
+            }
             result += perft(board, depth - 1);
             legal_moves++;
         }
@@ -47,17 +57,17 @@ void print_results(int depth, U64 leaf_nodes, U64 expected, TimePoint test_durat
     std::cout << std::fixed << std::setprecision(3);
     std::cout << "Completed in " << double(test_duration)/1000 << " seconds\n";
     std::cout << "Perft results at depth " << depth << ": " << leaf_nodes << "\n";
-    if (depth <= 16) {
-        if (expected == leaf_nodes)
-            std::cout << get_colored("Test produced expected results.\n", 32);
-        else
-            std::cout << get_colored("Test produced incorrect results", 31) + ": expected count was " << expected << "\n";
-    }
+    if (expected == leaf_nodes)
+        std::cout << get_colored("Test produced expected results.\n", 32);
     else
-        std::cout << "No expected values available for depths > 16.\n";
+        std::cout << get_colored("Test produced incorrect results", 31) + ": expected count was " << expected << "\n";
 
-    std::cout << "\nTotal nodes explored: " << total_nodes << "\n";
-    std::cout << "kNodes/Sec: " << double(total_nodes) / double(test_duration);
+    std::cout << captures << " captures\n";
+    std::cout << en_passant << " en passants\n";
+    std::cout << castles << " castles\n";
+    std::cout << promotions << " promotions\n";
+    std::cout << "Total nodes explored: " << total_nodes << "\n";
+    std::cout << "kNodes/Sec: " << double(total_nodes) / double(test_duration) << "\n";
 }
 
 int main() {
@@ -65,6 +75,11 @@ int main() {
 
     for (auto& [fen, vals] : expected_values) {
         total_nodes = 0;
+        captures = 0;
+        en_passant = 0;
+        castles = 0;
+        promotions = 0;
+
         std::cout << "Testing position: " << fen << "\n";
         Board b(fen);
         b.print();
