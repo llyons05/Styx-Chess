@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <bit>
 #include <iostream>
+#include <string>
 
 constexpr U64 FILLED_COLS[8] = {72340172838076673ULL, 217020518514230019ULL, 506381209866536711ULL, 1085102592571150095ULL, 2242545357980376863ULL, 4557430888798830399ULL, 9187201950435737471ULL, 18446744073709551615ULL};
 
@@ -142,6 +143,7 @@ public:
     U64 hash_key;
 
     Bitboards();
+    Bitboards(std::string fen);
     Bitboards(const Bitboards& other);
 
     Piece handle_move(const Move& move);

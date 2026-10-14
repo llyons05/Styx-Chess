@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <string>
 
 void BB64::print() const {
     for (int i = 56; i >= 0; i -= 8) {
@@ -44,6 +45,45 @@ Bitboards::Bitboards(const Bitboards& other) {
     castling_rights = other.castling_rights;
     ep_square = other.ep_square;
     stm = other.stm;
+}
+
+
+Bitboards::Bitboards(std::string fen) {
+    auto square_conv = [](int s){int row = 7-(s/8); int col = 7-(s%8); return eSquare(row*8 + col);};
+    int curr_square = 0;
+    int index = 0;
+    for (; (index < int(fen.size())) && (fen[index] != ' '); index++) {
+        char c = fen[index];
+        if (c == '/')
+            continue;
+        else if (isdigit(c)) {
+            assert((0 < c - '0') && (c - '0'<= 8));
+            curr_square += c - '0';
+        }
+        else {
+            put_piece(square_conv(curr_square), Piece(c));
+            curr_square++;
+        }
+    }
+    stm = fen[++index] == 'w' ? WHITE : BLACK;
+    castling_rights = 0;
+    for (index += 2; (index < int(fen.size())) && (fen[index] != ' '); index++) {
+        char c = fen[index];
+        if (c == 'k')
+            castling_rights |= CASTLE_BK;
+        else if (c == 'K')
+            castling_rights |= CASTLE_WK;
+        else if (c == 'q')
+            castling_rights |= CASTLE_BQ;
+        else if (c == 'Q')
+            castling_rights |= CASTLE_WQ;
+    }
+    std::string ep_section = fen.substr(index + 1, 2);
+    assert(ep_section.size() >= 1);
+    if (ep_section[0] == '-')
+        ep_square = NULL_SQUARE;
+    else
+        ep_square = square_conv(std::stoi(ep_section));
 }
 
 
