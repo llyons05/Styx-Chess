@@ -54,6 +54,14 @@ public:
     inline bool is_castle() const {
         return move_flag & MFLAG_CASTLE;
     }
+
+    inline bool is_pawn_jump() const {
+        return (piece_from == PAWN) && (abs(int(to) - int(from)) == 16);
+    }
+
+    inline bool is_ep() const {
+        return move_flag & MFLAG_EP;
+    }
     
     friend std::ostream& operator<<(std::ostream& os, const Move& m) {
         if (m.is_castle() && (m.to == G1 || m.to == G8))

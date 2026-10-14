@@ -59,6 +59,7 @@ eColor Bitboards::color_at(eSquare square) const {
 
 
 Piece Bitboards::handle_move(const Move& move) {
+    ep_square = NULL_SQUARE;
     pickup_piece(move.from);
     Piece taken_piece = put_piece(move.to, Piece(stm, move.piece_to));
     if (move.is_castle()) {
@@ -72,6 +73,20 @@ Piece Bitboards::handle_move(const Move& move) {
             put_piece(D8, pickup_piece(A8));
     }
 
+    else if (move.is_pawn_jump()) {
+        if (stm == WHITE)
+            ep_square = eSquare(move.from + 8);
+        else
+            ep_square = eSquare(move.from - 8);
+    }
+
+    else if (move.is_ep()) {
+        if (stm == WHITE)
+            pickup_piece(eSquare(move.to - 8));
+        else
+            pickup_piece(eSquare(move.to + 8));
+    }
+
     update_castling_rights(move);
     stm = !stm;
     return taken_piece;
@@ -80,6 +95,7 @@ Piece Bitboards::handle_move(const Move& move) {
 void Bitboards::undo_move(const Move& move) {
     stm = !stm;
     castling_rights = move.prev_castle_flags;
+    ep_square = move.prev_ep_square;
     if (move.is_castle()) {
         if (move.to == G1)     // White kingside
             put_piece(H1, pickup_piece(F1));
@@ -90,10 +106,16 @@ void Bitboards::undo_move(const Move& move) {
         else if (move.to == C8) // Black queenside
             put_piece(A8, pickup_piece(D8));
     }
+    else if (move.is_ep()) {
+        if (stm == WHITE)
+            put_piece(eSquare(move.to - 8), Piece(!stm, PAWN));
+        else
+            put_piece(eSquare(move.to + 8), Piece(!stm, PAWN));
+    }
 
     pickup_piece(move.to);
     put_piece(move.from, Piece(stm, move.piece_from));
-    if (move.piece_captured != NUM_PIECE_TYPES)
+    if (move.is_capture() && !move.is_ep())
         put_piece(move.to, Piece(!stm, move.piece_captured));
 }
 
