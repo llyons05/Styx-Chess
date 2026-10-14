@@ -50,8 +50,12 @@ void Move_Generator::gen_pawn_moves() {
         BB64 p(s);
         BB64 valid_moves = p.shift<forward>() & ~bbs.all();
         valid_moves |= (valid_moves & ROWS[relative_row(C, 2)]).shift<forward>() & ~bbs.all();
-        valid_moves |= (p.shift<take1>() | p.shift<take2>()) & bbs[!C];
+        
+        BB64 takes = (p.shift<take1>() | p.shift<take2>());
+        valid_moves |= takes & bbs[!C];
         write_moves(PAWN, PAWN, s, valid_moves, MFLAG_NORMAL);
+        if (bbs.ep_square != NULL_SQUARE)
+            write_moves(PAWN, PAWN, s, takes & BB64(bbs.ep_square), MFLAG_EP);
     }
 }
 
