@@ -54,7 +54,7 @@ void Move_Generator::gen_pawn_moves() {
         BB64 takes = (p.shift<take1>() | p.shift<take2>());
         valid_moves |= takes & bbs[!C];
         write_moves(PAWN, PAWN, s, valid_moves, MFLAG_NORMAL);
-        if (bbs.ep_square != NULL_SQUARE)
+        if ((bbs.ep_square != NULL_SQUARE) && !(p & ROWS[relative_row(C, 4)]).empty())
             write_moves(PAWN, PAWN, s, takes & BB64(bbs.ep_square), MFLAG_EP);
     }
 }
