@@ -28,6 +28,7 @@ public:
     }
 
     static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
+
 private:
     const Board& board;
     const Bitboards& bbs;
@@ -51,6 +52,85 @@ private:
 
     template <eColor C>
     static BB64 pawn_attacks(const Board& board);
+
+public:
+    class iterator {
+    public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type        = Move;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = Move*;
+        using reference         = Move&;
+
+        iterator() = default;
+
+        reference operator*() const {
+            return owner->movelist[index];
+        }
+
+        pointer operator->() const {
+            return &owner->movelist[index];
+        }
+
+        // Advance to the next highest-scoring move.
+        iterator& operator++() {
+            assert(owner != nullptr);
+            assert(index < owner->movelist.size());
+
+            const std::size_t next = index + 1;
+            const std::size_t size = owner->movelist.size();
+
+            if (next < size) {
+                std::size_t best = next;
+
+                for (std::size_t i = next + 1; i < size; ++i) {
+                    if (owner->movelist[i].score >
+                        owner->movelist[best].score) {
+                        best = i;
+                    }
+                }
+
+                if (best != next) {
+                    std::swap(owner->movelist[next],
+                              owner->movelist[best]);
+                }
+            }
+
+            ++index;
+            return *this;
+        }
+
+        iterator operator++(int) {
+            iterator old = *this;
+            ++(*this);
+            return old;
+        }
+
+        bool operator==(const iterator& other) const {
+            return owner == other.owner && index == other.index;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return !(*this == other);
+        }
+
+    private:
+        friend class Move_Generator;
+
+        Move_Generator* owner = nullptr;
+        std::size_t index = 0;
+
+        iterator(Move_Generator* owner, std::size_t index)
+            : owner(owner), index(index) {}
+    };
+
+    iterator begin() {
+        return iterator(this, 0);
+    }
+
+    iterator end() {
+        return iterator(this, movelist.size());
+    }
 };
 
 

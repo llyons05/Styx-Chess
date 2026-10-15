@@ -4,6 +4,8 @@
 
 class Move {
 public:
+    Score score;
+
     eSquare from : 7;
     eSquare to : 7;
 
@@ -16,7 +18,8 @@ public:
     U8 prev_castle_flags : 4;
     eSquare prev_ep_square : 7;
 
-    Move() : from(A1),
+    Move() : score(0),
+             from(A1),
              to(A1),
              piece_from(NUM_PIECE_TYPES),
              piece_to(NUM_PIECE_TYPES),
@@ -34,6 +37,7 @@ public:
          U8 prev_castle_flags,
          eSquare prev_ep_square)
          :
+         score(0),
          from(from),
          to(to),
          piece_from(piece_from),

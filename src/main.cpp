@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
         Move_Generator mg(board);
         bool undo = false;
         int legal_movecount = 0;
-        for (Move& move : mg.movelist) {
+        for (Move& move : mg) {
             board.move(move);
             if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                 legal_movecount++;
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
                     undo = true;
                     break;
                 }
-                for (Move& move : mg.movelist) {
+                for (Move& move : mg) {
                     if (move.to == square) {
                         board.move(move);
                         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))

@@ -4,6 +4,8 @@
 #include "board.hpp"
 #include "movegen.hpp"
 
+constexpr int CAPTURE_VAL = 10;
+
 struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
@@ -26,11 +28,12 @@ private:
 
     void prepare_for_search(TimePoint time_limit);
     void init_stack(Search_Stack* stack_base);
+    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack);
 
     Score eval(const Board& board);
     Score search_iterate(Board& board);
-    Score search_widen(Board& board, Search_Stack* stack, Depth depth, Score prev_score);
-    Score search_root(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
+    Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
+    Score search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
 
     bool do_move(Board& board, Search_Stack* stack, Move& move);
