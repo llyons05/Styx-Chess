@@ -175,5 +175,8 @@ Score Engine::eval(const Board& board) {
     result -= board.bbs[BLACK, KNIGHT].bitcount() * 300;
     result -= board.bbs[BLACK, ROOK].bitcount() * 500;
     result -= board.bbs[BLACK, QUEEN].bitcount() * 800;
+
+    if (board.stm() == BLACK)
+        return -result;
     return result;
 }
