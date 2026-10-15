@@ -22,17 +22,12 @@ void Engine::init_stack(Search_Stack* stack_base) {
         stack_base[i].ply = i;
 }
 
-// void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack) {
-//     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
-//         Move& move = mg[i];
-//         // Add piece values to score
-//         move.score += move.is_capture() * move.piece_captured;
-
-//         if (stack->ply == 0) { // If Root Node
-//             move.score += root_movelist_table[move.dest] * ROOT_MOVE_VAL;
-//         }
-//     }
-// }
+void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack) {
+    for (std::size_t i = 0; i < mg.movelist.size(); i++) {
+        Move& move = mg[i];
+        move.score += move.is_capture() * (1 + move.piece_captured + std::max(0, move.piece_captured - move.piece_from));
+    }
+}
 
 // Return true if legal move
 bool Engine::do_move(Board& board, Search_Stack* stack, Move& move) {
@@ -46,6 +41,8 @@ Score Engine::search_iterate(Board& board) {
     Search_Stack stack[MAX_PLY + 1] {};
     init_stack(stack);
     Move_Generator root_mg(board);
+    set_movescores(board, root_mg, stack);
+
     Depth current_depth = 1;
     Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
 
@@ -62,7 +59,7 @@ Score Engine::search_iterate(Board& board) {
 }
 
 Score Engine::search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score) {
-    Score window_size = 500;
+    Score window_size = 50;
     Score alpha = std::max(prev_score - window_size, -INF_SCORE);
     Score beta  = std::min(prev_score + window_size, INF_SCORE);
     Score score = prev_score;
@@ -99,16 +96,19 @@ Score Engine::search_widen(Board& board, Move_Generator& root_mg, Search_Stack* 
 Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth) {
     nodes_traversed++;
     set_search_cancelled();
-    Move chosen_move = root_mg[0];
+    int chosen_move_idx = 0;
     Score best_val = -INF_SCORE;
 
-    for (Move& m : root_mg.movelist) {
-        // std::cout << "Playing move " << m << " at depth " << depth << "\n";
+    int moves_tried = 0;
+    for (size_t i = 0; i < root_mg.movelist.size(); i++) {
+        Move& m = root_mg.next_move(i);
+        // std::cout << "Playing move " << m << " at depth " << depth << " score=" << m.score << "\n";
         if (!do_move(board, stack, m)) {
             board.undo(m);
+            m.score = -INF_SCORE;
             continue;
         }
-        
+        moves_tried++;
         Score move_score = -search(board, stack+1, -beta, -alpha, depth - 1);
         board.undo(m);
         
@@ -118,7 +118,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             break;
 
         if (move_score > alpha) {
-            chosen_move = m;
+            chosen_move_idx = i;
             alpha = move_score;
             // std::cout << "Move was best\n";
             if (alpha >= beta) {
@@ -129,8 +129,9 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
 
     if (!search_cancelled) {
         assert(abs(best_val) < INF_SCORE);
-        best_move = chosen_move;
-        // std::cout << "Best move chosen at depth " << depth << " " << chosen_move << "\n";
+        best_move = root_mg[chosen_move_idx];
+        root_mg[chosen_move_idx].score = depth*100;
+        // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
     }
     return best_val;
 }
@@ -147,9 +148,11 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         return eval(board);
 
     Move_Generator mg(board);
+    set_movescores(board, mg, stack);
     Score best_val = -INF_SCORE;
     int moves_tried = 0;
-    for (Move& m : mg.movelist) {
+    for (size_t i = 0; i < mg.movelist.size(); i++) {
+        Move& m = mg.next_move(i);
         if (!do_move(board, stack, m)) {
             board.undo(m);
             continue;
