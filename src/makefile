@@ -3,7 +3,7 @@ CXX = g++
 
 CXXFLAGS = -g -O3 -Wall -std=c++23
 
-_MAIN_OBJ_FILES = bitboards.o board.o movegen.o main.o
+_MAIN_OBJ_FILES = bitboards.o board.o movegen.o engine.o main.o
 MAIN_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_MAIN_OBJ_FILES))
 
 _TEST_OBJ_FILES = bitboards.o board.o movegen.o perft.o

@@ -11,6 +11,9 @@ const int MAX_MOVES = 218;
 
 class Move_Generator {
 public:
+    std::vector<Move> movelist;
+    BB64 destinations;
+
     Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
@@ -18,8 +21,11 @@ public:
         else
             gen_moves<BLACK>();
     }
-    std::vector<Move> movelist;
-    BB64 destinations;
+
+    constexpr Move& operator[](U8 index) {
+        assert(index < movelist.size());
+        return movelist[index];
+    }
 
     static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
 private:

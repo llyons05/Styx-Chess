@@ -66,6 +66,10 @@ public:
     inline bool is_promo() const {
         return move_flag == MFLAG_PROMO;
     }
+
+    inline bool is_valid() const {
+        return from != to;
+    }
     
     friend std::ostream& operator<<(std::ostream& os, const Move& m) {
         if (m.is_castle() && (m.to == G1 || m.to == G8))
