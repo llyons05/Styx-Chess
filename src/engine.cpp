@@ -137,6 +137,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             board.undo(m);
             continue;
         }
+        moves_tried++;
         Score val = -search(board, stack, -beta, -alpha, depth - 1);
         board.undo(m);
 
