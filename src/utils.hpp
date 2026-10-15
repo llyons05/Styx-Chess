@@ -20,7 +20,7 @@ typedef int Depth;
 constexpr Depth MAX_PLY = 100;
 constexpr Score MAX_SCORE = 100000;
 constexpr Score MIN_SCORE = -MAX_SCORE;
-constexpr Score INF_SCORE = 100001;
+constexpr Score INF_SCORE = MAX_SCORE + 1;
 constexpr Score MIN_WINNING_SCORE = MAX_SCORE - MAX_PLY;
 
 enum eColor : U8 {

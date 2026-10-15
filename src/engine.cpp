@@ -49,15 +49,17 @@ Score Engine::search_iterate(Board& board) {
 }
 
 Score Engine::search_widen(Board& board, Search_Stack* stack, Depth depth, Score prev_score) {
-    Score window_size = 100;
+    Score window_size = 500;
     Score alpha = std::max(prev_score - window_size, -INF_SCORE);
     Score beta  = std::min(prev_score + window_size, INF_SCORE);
     Score score = prev_score;
+    Move prev_best = best_move;
     U8 fails = 0;
     while (true) {
         score = search_root(board, stack, alpha, beta, depth);
         if (search_cancelled) {
             score = prev_score;
+            best_move = prev_best;
             break;
         }
 
@@ -85,16 +87,17 @@ Score Engine::search_root(Board& board, Search_Stack* stack, Score alpha, Score 
     nodes_traversed++;
     set_search_cancelled();
     Move_Generator mg(board);
-    Move& chosen_move = mg[0];
+    Move chosen_move = mg[0];
     Score best_val = -INF_SCORE;
 
     for (Move& m : mg.movelist) {
+        // std::cout << "Playing move " << m << " at depth " << depth << "\n";
         if (!do_move(board, stack, m)) {
             board.undo(m);
             continue;
         }
         
-        Score move_score = -search(board, stack, -beta, -alpha, depth - 1);
+        Score move_score = -search(board, stack+1, -beta, -alpha, depth - 1);
         board.undo(m);
         
         best_val = std::max(move_score, best_val);
@@ -105,6 +108,7 @@ Score Engine::search_root(Board& board, Search_Stack* stack, Score alpha, Score 
         if (move_score > alpha) {
             chosen_move = m;
             alpha = move_score;
+            // std::cout << "Move was best\n";
             if (alpha >= beta) {
                 break;
             }
@@ -114,6 +118,7 @@ Score Engine::search_root(Board& board, Search_Stack* stack, Score alpha, Score 
     if (!search_cancelled) {
         assert(abs(best_val) < INF_SCORE);
         best_move = chosen_move;
+        // std::cout << "Best move chosen at depth " << depth << " " << chosen_move << "\n";
     }
     return best_val;
 }
@@ -138,7 +143,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             continue;
         }
         moves_tried++;
-        Score val = -search(board, stack, -beta, -alpha, depth - 1);
+        Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
         board.undo(m);
 
         if (search_cancelled)

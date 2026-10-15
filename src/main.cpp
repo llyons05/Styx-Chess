@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     board.print();
     std::vector<Move> move_history;
     eColor player_color = WHITE;
-    TimePoint time_limit = 3000;
+    TimePoint time_limit = 1000;
 
     while (true) {
         Move_Generator mg(board);
