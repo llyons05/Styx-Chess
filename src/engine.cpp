@@ -1,10 +1,23 @@
 #include "engine.hpp"
 
+Engine& Engine::operator=(const Engine& other) {
+    if (this != &other) {
+        search_cancelled = other.search_cancelled;
+        external_cancel.store(other.external_cancel.load(std::memory_order::relaxed),
+                            std::memory_order::relaxed);
+        nodes_traversed = other.nodes_traversed;
+        time_limit = other.time_limit;
+        start_time = other.start_time;
+        best_move = other.best_move;
+    }
+    return *this;
+}
+
 Move Engine::find_move(Board& board, TimePoint time_limit) {
     prepare_for_search(time_limit);
     Score val = search_iterate(board);
 
-    std::cout << "Best move was " << best_move << " with value of " << val << "\n";
+    // std::cout << "Best move was " << best_move << " with value of " << val << "\n";
     
     return best_move;
 }
@@ -53,7 +66,7 @@ Score Engine::search_iterate(Board& board) {
         current_depth++;
     }
 
-    std::cout << "\nReached depth " << current_depth - 1 << ", searched " << nodes_traversed << " nodes\n";
+    // std::cout << "\nReached depth " << current_depth - 1 << ", searched " << nodes_traversed << " nodes\n";
 
     return final_val;
 }

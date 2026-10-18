@@ -2,22 +2,19 @@
 #include "board.hpp"
 #include "engine.hpp"
 #include "movegen.hpp"
+#include "uci.hpp"
 
+#include <future>
 #include <iostream>
 #include <string>
+#include <syncstream>
 #include <vector>
 
-int main(int argc, char* argv[]) {
-    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-    if (argc >= 2)
-        fen = argv[1];
-
+void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
     Board board(fen);
     Engine engine;
     board.print();
     std::vector<Move> move_history;
-    eColor player_color = WHITE;
-    TimePoint time_limit = 1000;
 
     while (true) {
         Move_Generator mg(board);
@@ -93,4 +90,53 @@ int main(int argc, char* argv[]) {
     }
     else
         std::cout << "STALEMATE\n";
+}
+
+int engine_go(Board& board, Engine& engine, TimePoint time_limit) {
+    Move best_move = engine.find_move(board, time_limit);
+    UCI_Command::info(engine);
+    UCI_Command::bestmove(best_move);
+    return 0;
+}
+
+void comp_mode() {
+    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    std::string filename = "output_" + std::to_string(timestamp) + ".txt";
+    if (std::freopen(filename.c_str(), "w", stderr) == nullptr) {
+        std::perror("Failed to redirect stderr");
+        return;
+    }
+    Board board;
+    Engine engine;
+    std::future<int> engine_future;
+    while (true) {
+        std::string line;
+        std::getline(std::cin, line);
+        if (engine_future.valid() && (engine_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready))
+            engine_future.get();
+        
+        const UCI_Command com(line, board, engine, engine_future.valid());
+
+        if (com.engine_go) {
+            engine_future = std::async(std::launch::async, engine_go, std::ref(board), std::ref(engine), com.time_limit);
+        }
+        if (com.engine_quit) {
+            engine_future.get();
+            exit(0);
+        }
+    }
+}
+
+int main(int argc, char* argv[]) {
+    if ((argc >= 2) && (std::string(argv[1]) == "-c")) {
+        eColor player_color = ((argc >= 3) && (std::string(argv[2]) == "w")) ? WHITE : BLACK;
+        TimePoint time_limit = (argc >= 4) ? std::stoll(argv[3]) : 1000;
+        std::string fen = (argc >= 5) ? argv[4] : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+        cli_mode(player_color, time_limit, fen);
+    }
+    else {
+        comp_mode();
+    }
 }

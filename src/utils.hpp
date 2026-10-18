@@ -18,6 +18,7 @@ typedef int Score;
 typedef int Depth;
 
 constexpr std::string version_str = "0.0.0";
+constexpr TimePoint INF_TIME = std::numeric_limits<TimePoint>::max();
 
 constexpr Depth MAX_PLY = 100;
 constexpr Score MAX_SCORE = 100000;

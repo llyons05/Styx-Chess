@@ -74,6 +74,13 @@ public:
     inline bool is_valid() const {
         return from != to;
     }
+
+    std::string long_alg() const {
+        std::string result = square_str(from) + square_str(to);
+        if (is_promo())
+            result += " bnrqk"[piece_to];
+        return result;
+    }
     
     friend std::ostream& operator<<(std::ostream& os, const Move& m) {
         if (m.is_castle() && (m.to == G1 || m.to == G8))

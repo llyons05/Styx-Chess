@@ -3,13 +3,13 @@ CXX = g++
 
 CXXFLAGS = -g -O3 -Wall -std=c++23
 
-_MAIN_OBJ_FILES = bitboards.o board.o movegen.o engine.o main.o
+_MAIN_OBJ_FILES = bitboards.o board.o movegen.o engine.o uci.o main.o
 MAIN_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_MAIN_OBJ_FILES))
 
 _TEST_OBJ_FILES = bitboards.o board.o movegen.o perft.o
 TEST_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_TEST_OBJ_FILES))
 
-HEADER_FILES = bitboards.hpp board.hpp move.hpp movegen.hpp utils.hpp
+HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp uci.hpp
 
 ifdef OS # Check if we are on windows
 	RD = rd /s /q
