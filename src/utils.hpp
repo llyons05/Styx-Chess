@@ -17,6 +17,8 @@ typedef std::chrono::milliseconds::rep TimePoint;
 typedef int Score;
 typedef int Depth;
 
+constexpr std::string version_str = "0.0.0";
+
 constexpr Depth MAX_PLY = 100;
 constexpr Score MAX_SCORE = 100000;
 constexpr Score MIN_SCORE = -MAX_SCORE;
