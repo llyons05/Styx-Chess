@@ -11,6 +11,9 @@ const int MAX_MOVES = 218;
 
 class Move_Generator {
 public:
+    std::vector<Move> movelist;
+    BB64 destinations;
+
     Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
@@ -18,10 +21,29 @@ public:
         else
             gen_moves<BLACK>();
     }
-    std::vector<Move> movelist;
-    BB64 destinations;
+
+    Move& next_move(int start) {
+        int move_index = start;
+        int best_score = movelist[move_index].score;
+
+        for (size_t i = move_index+1; i < movelist.size(); i++) {
+            if (movelist[i].score > best_score) {
+                best_score = movelist[i].score;
+                move_index = i;
+            }
+        }
+
+        std::swap(movelist[start], movelist[move_index]);
+        return movelist[start];
+    }
+
+    constexpr Move& operator[](U8 index) {
+        assert(index < movelist.size());
+        return movelist[index];
+    }
 
     static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
+
 private:
     const Board& board;
     const Bitboards& bbs;

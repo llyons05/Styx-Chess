@@ -8,12 +8,26 @@
 #include <numeric>
 #include <string>
 
+#define STRINGIFY(x) TO_STRING(x)
+#define TO_STRING(x) #x
+
 typedef  uint8_t  U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
 
 typedef std::chrono::milliseconds::rep TimePoint;
+typedef int Score;
+typedef int Depth;
+
+constexpr std::string version_str = STRINGIFY(VERSION_STR);
+constexpr TimePoint INF_TIME = std::numeric_limits<TimePoint>::max();
+
+constexpr Depth MAX_PLY = 100;
+constexpr Score MAX_SCORE = 100000;
+constexpr Score MIN_SCORE = -MAX_SCORE;
+constexpr Score INF_SCORE = MAX_SCORE + 1;
+constexpr Score MIN_WINNING_SCORE = MAX_SCORE - MAX_PLY;
 
 enum eColor : U8 {
     WHITE,
@@ -124,6 +138,8 @@ constexpr std::string square_str(eSquare square) {
 }
 
 constexpr eSquare str_to_square(std::string str) {
+    if (str.size() != 2)
+        return NULL_SQUARE;
     int col = str[0] - 'a';
     int row = str[1] - '1';
     if (row < 0 || row > 7)

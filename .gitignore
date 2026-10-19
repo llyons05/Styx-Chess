@@ -1,3 +1,8 @@
 .vscode
 *.exe
 *-build/
+.venv
+engines/
+output*.txt
+fastchess*
+config.json

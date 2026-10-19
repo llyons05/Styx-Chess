@@ -189,6 +189,7 @@ public:
     }
 
     eSquare king_sq(eColor color) const {
+        assert(color < NUM_COLORS);
         return piece_bbs[color][KING].lsb();
     }
 

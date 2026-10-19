@@ -4,6 +4,8 @@
 
 class Move {
 public:
+    Score score;
+
     eSquare from : 7;
     eSquare to : 7;
 
@@ -16,7 +18,8 @@ public:
     U8 prev_castle_flags : 4;
     eSquare prev_ep_square : 7;
 
-    Move() : from(A1),
+    Move() : score(0),
+             from(A1),
              to(A1),
              piece_from(NUM_PIECE_TYPES),
              piece_to(NUM_PIECE_TYPES),
@@ -34,6 +37,7 @@ public:
          U8 prev_castle_flags,
          eSquare prev_ep_square)
          :
+         score(0),
          from(from),
          to(to),
          piece_from(piece_from),
@@ -65,6 +69,17 @@ public:
 
     inline bool is_promo() const {
         return move_flag == MFLAG_PROMO;
+    }
+
+    inline bool is_valid() const {
+        return from != to;
+    }
+
+    std::string long_alg() const {
+        std::string result = square_str(from) + square_str(to);
+        if (is_promo())
+            result += " bnrqk"[piece_to];
+        return result;
     }
     
     friend std::ostream& operator<<(std::ostream& os, const Move& m) {
