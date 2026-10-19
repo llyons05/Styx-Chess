@@ -1,6 +1,6 @@
-#include "utils.hpp"
 #include "board.hpp"
 #include "movegen.hpp"
+#include "utils.hpp"
 
 #include <iostream>
 #include <iomanip>

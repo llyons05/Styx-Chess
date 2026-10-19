@@ -1,7 +1,7 @@
 #pragma once
 
-#include "move.hpp"
 #include "board.hpp"
+#include "move.hpp"
 
 #include <array>
 #include <cstdint>

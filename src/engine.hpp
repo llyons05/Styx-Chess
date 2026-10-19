@@ -1,8 +1,8 @@
 #pragma once
 
-#include "utils.hpp"
 #include "board.hpp"
 #include "movegen.hpp"
+#include "utils.hpp"
 
 #include <atomic>
 

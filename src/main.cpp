@@ -1,8 +1,8 @@
-#include "utils.hpp"
 #include "board.hpp"
 #include "engine.hpp"
 #include "movegen.hpp"
 #include "uci.hpp"
+#include "utils.hpp"
 
 #include <future>
 #include <iostream>

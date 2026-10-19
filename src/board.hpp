@@ -1,8 +1,8 @@
 #pragma once
 
-#include "utils.hpp"
 #include "bitboards.hpp"
 #include "move.hpp"
+#include "utils.hpp"
 
 #include <cstdint>
 #include <string>
