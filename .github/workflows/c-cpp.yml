@@ -3,7 +3,9 @@ name: CI
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*', '*.*.*' ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   run-tests:
@@ -33,9 +35,35 @@ jobs:
           ./test/test.sh 2>&1 | tee test-output.log
         shell: bash
 
+      - name: Set artifact version
+        id: artifact_version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_SHA::7}}"
+          VERSION="${VERSION//\//-}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build project
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.artifact_version.outputs.version }}"
+          mkdir -p "build-artifacts/${VERSION}"
+          cd src
+          make VERSION="${VERSION}"
+          find . -maxdepth 2 -type f -executable -not -path './.git/*' -exec cp -p {} "../build-artifacts/${VERSION}/" \;
+          ls -R ../build-artifacts
+        shell: bash
+
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-output
           path: test-output.log
+
+      - name: Upload build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chess-engine-${{ steps.artifact_version.outputs.version }}
+          path: build-artifacts/
