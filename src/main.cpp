@@ -94,7 +94,6 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
 
 int engine_go(Board& board, Engine& engine, TimePoint time_limit) {
     Move best_move = engine.find_move(board, time_limit);
-    UCI_Command::info(engine);
     UCI_Command::bestmove(best_move);
     return 0;
 }
@@ -113,7 +112,8 @@ void comp_mode() {
     std::future<int> engine_future;
     while (true) {
         std::string line;
-        std::getline(std::cin, line);
+        if (!std::getline(std::cin, line))
+            break;
         if (engine_future.valid() && (engine_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready))
             engine_future.get();
         

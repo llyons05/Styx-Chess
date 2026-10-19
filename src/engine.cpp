@@ -1,5 +1,7 @@
 #include "engine.hpp"
 
+#include "uci.hpp"
+
 Engine& Engine::operator=(const Engine& other) {
     if (this != &other) {
         search_cancelled = other.search_cancelled;
@@ -63,6 +65,7 @@ Score Engine::search_iterate(Board& board) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
         if (!search_cancelled)
             final_val = temp_val;
+        UCI_Command::send_command("info nodes " + std::to_string(nodes_traversed) + " depth " + std::to_string(current_depth) + " score cp " + std::to_string(board.stm() == WHITE ? final_val : -final_val));
         current_depth++;
     }
 
