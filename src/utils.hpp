@@ -138,6 +138,8 @@ constexpr std::string square_str(eSquare square) {
 }
 
 constexpr eSquare str_to_square(std::string str) {
+    if (str.size() != 2)
+        return NULL_SQUARE;
     int col = str[0] - 'a';
     int row = str[1] - '1';
     if (row < 0 || row > 7)

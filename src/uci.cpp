@@ -126,7 +126,7 @@ void UCI_Command::position() {
 void UCI_Command::go() {
     size_t movetime = command.find("movetime");
     if (movetime != std::string::npos) {
-        sscanf(command.c_str() + movetime, "movetime %ld", &time_limit);
+        sscanf(command.c_str() + movetime, "movetime %lld", &time_limit);
     }
     engine.external_cancel.store(false, std::memory_order::relaxed);
     engine_go = true;

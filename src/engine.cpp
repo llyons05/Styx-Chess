@@ -111,7 +111,6 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     int chosen_move_idx = 0;
     Score best_val = -INF_SCORE;
 
-    int moves_tried = 0;
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
         Move& m = root_mg.next_move(i);
         // std::cout << "Playing move " << m << " at depth " << depth << " score=" << m.score << "\n";
@@ -120,7 +119,6 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             m.score = -INF_SCORE;
             continue;
         }
-        moves_tried++;
         Score move_score = -search(board, stack+1, -beta, -alpha, depth - 1);
         board.undo(m);
         
@@ -132,7 +130,6 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
         if (move_score > alpha) {
             chosen_move_idx = i;
             alpha = move_score;
-            // std::cout << "Move was best\n";
             if (alpha >= beta) {
                 break;
             }
