@@ -27,7 +27,7 @@ ifeq ($(OS),Windows_NT)
         OUTPUT_GUARD = mkdir -p "$(OUTPUT_DIR)"
     endif
 else
-	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-linux.exe
+	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-linux
     RD = rm -rf
     BUILD_DIR := linux-build
     BUILD_GUARD = mkdir -p "$(BUILD_DIR)"
