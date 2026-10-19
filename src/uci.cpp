@@ -82,7 +82,7 @@ void UCI_Command::option(const std::string& name, const std::string& def) {
 }
 
 void UCI_Command::uci() {
-    id("lukechess " + version_str, "Luke Lyons");
+    id("LukeChess v" + version_str, "Luke Lyons");
     // Future options here
     UCI_Command::uciok();
 }

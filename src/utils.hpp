@@ -8,6 +8,9 @@
 #include <numeric>
 #include <string>
 
+#define STRINGIFY(x) TO_STRING(x)
+#define TO_STRING(x) #x
+
 typedef  uint8_t  U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
@@ -17,7 +20,7 @@ typedef std::chrono::milliseconds::rep TimePoint;
 typedef int Score;
 typedef int Depth;
 
-constexpr std::string version_str = "0.0.0";
+constexpr std::string version_str = STRINGIFY(VERSION_STR);
 constexpr TimePoint INF_TIME = std::numeric_limits<TimePoint>::max();
 
 constexpr Depth MAX_PLY = 100;
