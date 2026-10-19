@@ -17,6 +17,7 @@ HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp
 ifeq ($(OS),Windows_NT)
 	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-windows.exe
 	BUILD_DIR := windows-build
+    LDFLAGS = -static
     ifeq ($(MSYSTEM),)
         RD = rd /s /q
         BUILD_GUARD = if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
@@ -32,11 +33,12 @@ else
     BUILD_DIR := linux-build
     BUILD_GUARD = mkdir -p "$(BUILD_DIR)"
     OUTPUT_GUARD = mkdir -p "$(OUTPUT_DIR)"
+    LDFLAGS = -static-libstdc++ -static-libgcc
 endif
 
 main: $(MAIN_OBJ_FILES)
 	@$(OUTPUT_GUARD)
-	$(CXX) $(CXXFLAGS) $^ -o $(TARGET)
+	$(CXX) $(CXXFLAGS) $^ -o $(TARGET) $(LDFLAGS)
 
 test: $(TEST_OBJ_FILES)
 	$(CXX) $(CXXFLAGS) $^ -o test.exe
