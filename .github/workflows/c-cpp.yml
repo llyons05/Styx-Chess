@@ -112,7 +112,7 @@ jobs:
           VERSION="${{ steps.artifact_version.outputs.version }}"
           mkdir -p "build-artifacts/${VERSION}"
           cd src
-
+          g++ --version
           make VERSION="${VERSION}" CXX=g++
 
           # Copy the .exe files created by the build
