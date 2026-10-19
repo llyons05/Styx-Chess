@@ -27,12 +27,12 @@ jobs:
         shell: bash
 
       - name: Ensure test.sh is executable
-        run: chmod +x ./test/test.sh
+        run: chmod +x ./test/perft.sh
 
       - name: Run tests
         run: |
           set -o pipefail
-          ./test/test.sh 2>&1 | tee test-output.log
+          ./test/perft.sh 2>&1 | tee test-output.log
         shell: bash
 
       - name: Set artifact version
