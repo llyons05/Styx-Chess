@@ -22,7 +22,7 @@ public:
     static void uciok();
     static void readyok();
     static void bestmove(const Move& move);
-    static void info(const Engine& engine);
+    static void info(U64 nodes, Depth depth, TimePoint start_time, Score val);
     static void option(const std::string& name, const std::string& def);
 
 private:

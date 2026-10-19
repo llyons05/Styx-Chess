@@ -1,5 +1,6 @@
 #include "uci.hpp"
 
+#include <math.h>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -15,7 +16,6 @@ UCI_Command::UCI_Command(const std::string& command, Board& board, Engine& engin
     time_limit(INF_TIME),
     engine_running(engine_running) 
     {
-    std::cerr << command << "\n";
     if (command == "uci")
         uci();
     else if (command.starts_with("debug"))
@@ -41,7 +41,6 @@ UCI_Command::UCI_Command(const std::string& command, Board& board, Engine& engin
 void UCI_Command::send_command(const std::string& command) {
     std::osyncstream(std::cout) << command << "\n";
     std::osyncstream(std::cout).flush();
-    std::osyncstream(std::cerr) << "\t" << command << "\n";
 }
 
 void UCI_Command::id(const std::string& name, const std::string& author) {
@@ -61,8 +60,21 @@ void UCI_Command::bestmove(const Move& move) {
     send_command("bestmove " + move.long_alg());
 }
 
-void UCI_Command::info(const Engine& engine) {
-    send_command("info nodes " + std::to_string(engine.nodes_traversed));
+void UCI_Command::info(U64 nodes, Depth depth, TimePoint start_time, Score score) {
+    std::string info_str = "info nodes " + std::to_string(nodes) + " depth " + std::to_string(depth) + " score ";
+    if (abs(score) >= MIN_WINNING_SCORE) {
+        if (score < 0)
+            info_str += "mate " + std::to_string(int(std::floor(double(-MAX_SCORE - score)/2)));
+        else
+            info_str += "mate " + std::to_string(int(std::ceil(double(MAX_SCORE - score)/2)));
+    }
+    else
+        info_str += "cp " + std::to_string(score);
+    
+    TimePoint elapsed = get_time() - start_time;
+    if (elapsed)
+        info_str += " nps " + std::to_string(int64_t(1000 * double(nodes)/double(elapsed)));
+    send_command(info_str);
 }
 
 void UCI_Command::option(const std::string& name, const std::string& def) {

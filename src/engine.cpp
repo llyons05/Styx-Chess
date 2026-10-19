@@ -17,9 +17,7 @@ Engine& Engine::operator=(const Engine& other) {
 
 Move Engine::find_move(Board& board, TimePoint time_limit) {
     prepare_for_search(time_limit);
-    Score val = search_iterate(board);
-
-    // std::cout << "Best move was " << best_move << " with value of " << val << "\n";
+    search_iterate(board);
     
     return best_move;
 }
@@ -65,11 +63,9 @@ Score Engine::search_iterate(Board& board) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
         if (!search_cancelled)
             final_val = temp_val;
-        UCI_Command::send_command("info nodes " + std::to_string(nodes_traversed) + " depth " + std::to_string(current_depth) + " score cp " + std::to_string(board.stm() == WHITE ? final_val : -final_val));
+        UCI_Command::info(nodes_traversed, current_depth, start_time, final_val);
         current_depth++;
     }
-
-    // std::cout << "\nReached depth " << current_depth - 1 << ", searched " << nodes_traversed << " nodes\n";
 
     return final_val;
 }

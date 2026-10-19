@@ -99,14 +99,6 @@ int engine_go(Board& board, Engine& engine, TimePoint time_limit) {
 }
 
 void comp_mode() {
-    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
-
-    std::string filename = "output_" + std::to_string(timestamp) + ".txt";
-    if (std::freopen(filename.c_str(), "w", stderr) == nullptr) {
-        std::perror("Failed to redirect stderr");
-        return;
-    }
     Board board;
     Engine engine;
     std::future<int> engine_future;
