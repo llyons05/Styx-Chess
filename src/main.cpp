@@ -104,7 +104,7 @@ void comp_mode() {
     std::future<int> engine_future;
     while (true) {
         std::string line;
-        if (!std::getline(std::cin, line))
+        if (!std::getline(std::cin, line) || line.starts_with("quit"))
             break;
         if (engine_future.valid() && (engine_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready))
             engine_future.get();
@@ -114,6 +114,7 @@ void comp_mode() {
         if (com.engine_go) {
             engine_future = std::async(std::launch::async, engine_go, std::ref(board), std::ref(engine), com.time_limit);
         }
+
         if (com.engine_quit) {
             engine_future.get();
             exit(0);
