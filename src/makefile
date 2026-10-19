@@ -15,7 +15,7 @@ TEST_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_TEST_OBJ_FILES))
 HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp uci.hpp
 
 ifeq ($(OS),Windows_NT)
-	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-windows.exe
+	TARGET = $(OUTPUT_DIR)/LukeChess_$(VERSION)-windows.exe
 	BUILD_DIR := windows-build
     LDFLAGS = -static
     ifeq ($(MSYSTEM),)
@@ -28,7 +28,7 @@ ifeq ($(OS),Windows_NT)
         OUTPUT_GUARD = mkdir -p "$(OUTPUT_DIR)"
     endif
 else
-	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-linux
+	TARGET = $(OUTPUT_DIR)/LukeChess_$(VERSION)-linux
     RD = rm -rf
     BUILD_DIR := linux-build
     BUILD_GUARD = mkdir -p "$(BUILD_DIR)"
