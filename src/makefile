@@ -3,7 +3,6 @@ OUTPUT_DIR = ../engines
 CXX = g++
 
 VERSION ?= 0
-TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION).exe
 
 CXXFLAGS = -g -O3 -Wall -std=c++23 -DVERSION_STR=$(VERSION)
 
@@ -15,16 +14,24 @@ TEST_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_TEST_OBJ_FILES))
 
 HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp uci.hpp
 
-ifdef OS # Check if we are on windows
-	RD = rd /s /q
+ifeq ($(OS),Windows_NT)
+	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-windows.exe
 	BUILD_DIR := windows-build
-	BUILD_GUARD = if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
-	OUTPUT_GUARD = if not exist "$(OUTPUT_DIR)" mkdir "$(OUTPUT_DIR)"
+    ifeq ($(MSYSTEM),)
+        RD = rd /s /q
+        BUILD_GUARD = if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+        OUTPUT_GUARD = if not exist "$(OUTPUT_DIR)" mkdir "$(OUTPUT_DIR)"
+    else
+        RD = rm -rf
+        BUILD_GUARD = mkdir -p "$(BUILD_DIR)"
+        OUTPUT_GUARD = mkdir -p "$(OUTPUT_DIR)"
+    endif
 else
+	TARGET = $(OUTPUT_DIR)/LukeChess_v$(VERSION)-linux.exe
     RD = rm -rf
-	BUILD_DIR := linux-build
-    BUILD_GUARD = mkdir -p $(BUILD_DIR)
-	OUTPUT_GUARD = mkdir -p $(OUTPUT_DIR)
+    BUILD_DIR := linux-build
+    BUILD_GUARD = mkdir -p "$(BUILD_DIR)"
+    OUTPUT_GUARD = mkdir -p "$(OUTPUT_DIR)"
 endif
 
 main: $(MAIN_OBJ_FILES)
