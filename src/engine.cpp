@@ -50,6 +50,11 @@ bool Engine::do_move(Board& board, Search_Stack* stack, Move& move) {
     return !in_check(board, !board.stm());
 }
 
+
+void Engine::undo_move(Board& board, Search_Stack* stack, Move& move) {
+    board.undo(move, stack->state_info);
+}
+
 Score Engine::search_iterate(Board& board) {
     Search_Stack stack[MAX_PLY + 1] {};
     init_stack(stack);
@@ -110,17 +115,18 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     set_search_cancelled();
     int chosen_move_idx = 0;
     Score best_val = -INF_SCORE;
+    stack->state_info = board.bbs.state_info();
 
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
         Move& m = root_mg.next_move(i);
         // std::cout << "Playing move " << m << " at depth " << depth << " score=" << m.score << "\n";
         if (!do_move(board, stack, m)) {
-            board.undo(m);
+            undo_move(board, stack, m);
             m.score = -INF_SCORE;
             continue;
         }
         Score move_score = -search(board, stack+1, -beta, -alpha, depth - 1);
-        board.undo(m);
+        undo_move(board, stack, m);
         
         best_val = std::max(move_score, best_val);
 
@@ -151,6 +157,13 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (search_cancelled)
         return 0;
 
+    stack->state_info = board.bbs.state_info();
+    if (board.is_draw()) {
+        // std::cout << "DRAW FOUND at depth " << stack->ply << ", move was " << (stack-1)->current_move.long_alg() << "\n";
+        // board.print();
+        return 0;
+    }
+
     bool flag_in_check = in_check(board, board.stm());
 
     if (depth <= 0)
@@ -163,12 +176,12 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     for (size_t i = 0; i < mg.movelist.size(); i++) {
         Move& m = mg.next_move(i);
         if (!do_move(board, stack, m)) {
-            board.undo(m);
+            undo_move(board, stack, m);
             continue;
         }
         moves_tried++;
         Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
-        board.undo(m);
+        undo_move(board, stack, m);
 
         if (search_cancelled)
             break;

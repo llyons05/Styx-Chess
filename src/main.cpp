@@ -14,24 +14,27 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
     Board board(fen);
     Engine engine;
     board.print();
-    std::vector<Move> move_history;
+    std::vector<std::pair<Move, BB_State_Info>> move_history;
 
     while (true) {
+        if (board.is_draw())
+            break;
         Move_Generator mg(board);
         bool undo = false;
         int legal_movecount = 0;
         for (Move& move : mg.movelist) {
+            BB_State_Info info = board.bbs.state_info();
             board.move(move);
             if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                 legal_movecount++;
-            board.undo(move);
+            board.undo(move, info);
         }
         if (legal_movecount == 0) {
             std::cout << "GAME OVER!\n";
             break;
         }
         Move m;
-        if (board.stm() == player_color) {
+        if (false) {
             eSquare square = NULL_SQUARE;
             std::vector<Move> legal_moves;
             while (legal_moves.empty()) {
@@ -43,10 +46,11 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
                 }
                 for (Move& move : mg.movelist) {
                     if (move.to == square) {
+                        BB_State_Info info = board.bbs.state_info();
                         board.move(move);
                         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                             legal_moves.push_back(move);
-                        board.undo(move);
+                        board.undo(move, info);
                     }
                 }
                 if (legal_moves.empty())
@@ -54,10 +58,10 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
             }
             if (undo) {
                 if (!move_history.empty()) {
-                    board.undo(move_history.back());
+                    board.undo(move_history.back().first, move_history.back().second);
                     move_history.pop_back();
                     if (!move_history.empty()) {
-                        board.undo(move_history.back());
+                        board.undo(move_history.back().first, move_history.back().second);
                         move_history.pop_back();
                     }
                     board.print();
@@ -77,8 +81,9 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
         else {
             m = engine.find_move(board, time_limit);
         }
+        BB_State_Info info = board.bbs.state_info();
         board.move(m);
-        move_history.push_back(m);
+        move_history.push_back({m, info});
         board.print();
     }
 

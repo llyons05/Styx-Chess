@@ -29,7 +29,11 @@ Bitboards::Bitboards() {
         }
     castling_rights = CASTLE_WK | CASTLE_WQ | CASTLE_BK | CASTLE_BQ;
     ep_square = NULL_SQUARE;
+    fifty_move_rule = 0;
     stm = WHITE;
+
+    hash_key ^= zobrist.ep(ep_square);
+    hash_key ^= zobrist.castling(castling_rights);
 }
 
 
@@ -50,15 +54,17 @@ Bitboards::Bitboards(const Bitboards& other) {
     }
     castling_rights = other.castling_rights;
     ep_square = other.ep_square;
+    fifty_move_rule = other.fifty_move_rule;
     stm = other.stm;
+    hash_key = other.hash_key;
 }
 
 
 Bitboards::Bitboards(std::string fen) {
     auto square_conv = [](int s){int row = 7-(s/8); int col = s%8; return eSquare(row*8 + col);};
     int curr_square = 0;
-    int index = 0;
-    for (; (index < int(fen.size())) && (fen[index] != ' '); index++) {
+    size_t index = 0;
+    for (; (index < fen.size()) && (fen[index] != ' '); index++) {
         char c = fen[index];
         if (c == '/')
             continue;
@@ -73,7 +79,7 @@ Bitboards::Bitboards(std::string fen) {
     }
     stm = fen[++index] == 'w' ? WHITE : BLACK;
     castling_rights = 0;
-    for (index += 2; (index < int(fen.size())) && (fen[index] != ' '); index++) {
+    for (index += 2; (index < fen.size()) && (fen[index] != ' '); index++) {
         char c = fen[index];
         if (c == 'k')
             castling_rights |= CASTLE_BK;
@@ -90,6 +96,15 @@ Bitboards::Bitboards(std::string fen) {
         ep_square = NULL_SQUARE;
     else
         ep_square = str_to_square(ep_section);
+    
+    index += 4;
+    if (index + 2 < fen.size())
+        fifty_move_rule = std::stoi(fen.substr(index, 2));
+    
+    if (stm == BLACK)
+        hash_key ^= zobrist.color();
+    hash_key ^= zobrist.ep(ep_square);
+    hash_key ^= zobrist.castling(castling_rights);
 }
 
 
@@ -104,7 +119,13 @@ eColor Bitboards::color_at(eSquare square) const {
 }
 
 
+bool Bitboards::has_mating_material(eColor color) const {
+    BB64 n_b_bb = piece_bbs[color][BISHOP] | piece_bbs[color][KNIGHT];
+    return (color_bbs[color] != (piece_bbs[color][KING] | n_b_bb)) || (n_b_bb.bitcount() > 1);
+}
+
 Piece Bitboards::handle_move(const Move& move) {
+    hash_key ^= zobrist.ep(ep_square);
     ep_square = NULL_SQUARE;
     pickup_piece(move.from);
     Piece taken_piece = put_piece(move.to, Piece(stm, move.piece_to));
@@ -120,10 +141,7 @@ Piece Bitboards::handle_move(const Move& move) {
     }
 
     else if (move.is_pawn_jump()) {
-        if (stm == WHITE)
-            ep_square = eSquare(move.from + 8);
-        else
-            ep_square = eSquare(move.from - 8);
+        update_ep_square(move);
     }
 
     else if (move.is_ep()) {
@@ -133,15 +151,29 @@ Piece Bitboards::handle_move(const Move& move) {
             pickup_piece(eSquare(move.to + 8));
     }
 
+    if ((move.piece_from == PAWN) || move.is_capture())
+        fifty_move_rule = 0;
+    else
+        fifty_move_rule++;
+
     update_castling_rights(move);
-    stm = !stm;
+    change_turn();
     return taken_piece;
 }
 
-void Bitboards::undo_move(const Move& move) {
-    stm = !stm;
-    castling_rights = move.prev_castle_flags;
-    ep_square = move.prev_ep_square;
+
+void Bitboards::undo_move(const Move& move, const BB_State_Info& state_info) {
+    change_turn();
+    fifty_move_rule = state_info.fifty_move_rule;
+
+    hash_key ^= zobrist.castling(castling_rights);
+    castling_rights = state_info.castling_rights;
+    hash_key ^= zobrist.castling(castling_rights);
+
+    hash_key ^= zobrist.ep(ep_square);
+    ep_square = state_info.ep_square;
+    hash_key ^= zobrist.ep(ep_square);
+
     if (move.is_castle()) {
         if (move.to == G1)     // White kingside
             put_piece(H1, pickup_piece(F1));
@@ -170,11 +202,13 @@ void Bitboards::undo_move(const Move& move) {
 inline Piece Bitboards::put_piece(eSquare square, Piece piece) {
     assert(!piece.is_null());
 
+    Piece taken_piece = pickup_piece(square);
+
     color_bbs[piece.color].fill(square);
     piece_bbs[piece.color][piece.pt].fill(square);
-
-    Piece taken_piece = pickup_piece(square);
     pieces[square] = piece;
+
+    hash_key ^= zobrist[piece.color, piece.pt, square];
     return taken_piece;
 }
 
@@ -186,12 +220,14 @@ inline Piece Bitboards::pickup_piece(eSquare square) {
         color_bbs[piece.color].zero(square);
         piece_bbs[piece.color][piece.pt].zero(square);
         pieces[square] = Piece();
+        hash_key ^= zobrist[piece.color, piece.pt, square];
     }
     return piece;
 }
 
 
 void Bitboards::update_castling_rights(const Move& m) {
+    hash_key ^= zobrist.castling(castling_rights);
     switch (m.from) {
     case H1:
         castling_rights &= ~CASTLE_WK;
@@ -236,4 +272,20 @@ void Bitboards::update_castling_rights(const Move& m) {
     default:
         break;
     }
+    hash_key ^= zobrist.castling(castling_rights);
+}
+
+void Bitboards::update_ep_square(const Move& m) {
+    // In the future check if en passant is possible before setting it
+    if (stm == WHITE)
+        ep_square = eSquare(m.from + 8);
+    else
+        ep_square = eSquare(m.from - 8);
+    
+    hash_key ^= zobrist.ep(ep_square);
+}
+
+void Bitboards::change_turn() {
+    stm = !stm;
+    hash_key ^= zobrist.color();
 }

@@ -12,6 +12,7 @@ struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
     Move current_move = Move();
+    BB_State_Info state_info;
 };
 
 class Engine {
@@ -41,6 +42,7 @@ private:
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
 
     bool do_move(Board& board, Search_Stack* stack, Move& move);
+    void undo_move(Board& board, Search_Stack* stack, Move& move);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)

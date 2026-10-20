@@ -29,6 +29,7 @@ U64 perft(Board& board, int depth) {
     total_nodes++;
     U64 result = 0;
     Move_Generator mg(board);
+    BB_State_Info info = board.bbs.state_info();
 
     if (depth <= 0)
         return 1;
@@ -46,7 +47,7 @@ U64 perft(Board& board, int depth) {
             result += perft(board, depth - 1);
             legal_moves++;
         }
-        board.undo(move);
+        board.undo(move, info);
     }
     return result;
 }

@@ -24,10 +24,33 @@ constexpr std::string version_str = STRINGIFY(VERSION_STR);
 constexpr TimePoint INF_TIME = std::numeric_limits<TimePoint>::max();
 
 constexpr Depth MAX_PLY = 100;
+constexpr int MAX_GAME_LENGTH = 1024;
 constexpr Score MAX_SCORE = 100000;
 constexpr Score MIN_SCORE = -MAX_SCORE;
 constexpr Score INF_SCORE = MAX_SCORE + 1;
 constexpr Score MIN_WINNING_SCORE = MAX_SCORE - MAX_PLY;
+
+// From stockfish
+class PRNG {
+
+    U64 s;
+
+    U64 rand64() {
+        s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
+        return s * 2685821657736338717LL;
+    }
+
+    public:
+    PRNG(U64 seed) :
+        s(seed) {
+        assert(seed);
+    }
+
+    template<typename T = U64>
+    T rand() {
+        return T(rand64());
+    }
+} extern rng;
 
 enum eColor : U8 {
     WHITE,
@@ -127,7 +150,7 @@ enum eSquare : U8 {
 
 constexpr eSquare operator++(eSquare& square, int) {
     eSquare temp = square;
-    square = static_cast<eSquare>((square + 1) % (NULL_SQUARE));
+    square = static_cast<eSquare>((square + 1) % (NULL_SQUARE + 1));
     return temp;
 }
 
