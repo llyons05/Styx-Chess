@@ -2,7 +2,7 @@ BUILD_DIR = build
 OUTPUT_DIR = ../engines
 CXX = g++
 
-VERSION ?= 0
+VERSION ?= latest
 
 CXXFLAGS = -g -O3 -Wall -std=c++23 -DVERSION_STR=$(VERSION)
 
