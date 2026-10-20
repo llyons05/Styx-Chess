@@ -10,7 +10,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 ./fastchess-linux-x86-64/fastchess \
-    -engine name=lukechess1 cmd=$1 \
-    -engine name=lukechess2 cmd=$2 \
+    -engine name=$1 cmd=$1 \
+    -engine name=$2 cmd=$2 \
     -each st=$3 timemargin=50 \
     -rounds $4 -openings file=./resources/UHO_4060_v4.epd format=epd
