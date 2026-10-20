@@ -52,7 +52,7 @@ bool Engine::do_move(Board& board, Search_Stack* stack, Move& move) {
 
 
 void Engine::undo_move(Board& board, Search_Stack* stack, Move& move) {
-    board.undo(move);
+    board.undo(move, stack->state_info);
 }
 
 Score Engine::search_iterate(Board& board) {

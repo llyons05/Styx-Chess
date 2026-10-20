@@ -167,10 +167,11 @@ public:
     Bitboards(const Bitboards& other);
 
     Piece handle_move(const Move& move);
-    void undo_move(const Move& move);
+    void undo_move(const Move& move, const BB_State_Info& state_info);
 
     Piece piece_at(eSquare square) const;
     eColor color_at(eSquare square) const;
+    bool has_mating_material(eColor color) const;
 
     BB_State_Info state_info() const {
         return BB_State_Info(hash_key, castling_rights, ep_square, fifty_move_rule);

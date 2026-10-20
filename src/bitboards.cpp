@@ -118,6 +118,12 @@ eColor Bitboards::color_at(eSquare square) const {
     return pieces[square].color;
 }
 
+
+bool Bitboards::has_mating_material(eColor color) const {
+    BB64 n_b_bb = piece_bbs[color][BISHOP] | piece_bbs[color][KNIGHT];
+    return (color_bbs[color] != (piece_bbs[color][KING] | n_b_bb)) || (n_b_bb.bitcount() > 1);
+}
+
 Piece Bitboards::handle_move(const Move& move) {
     hash_key ^= zobrist.ep(ep_square);
     ep_square = NULL_SQUARE;
@@ -156,16 +162,16 @@ Piece Bitboards::handle_move(const Move& move) {
 }
 
 
-void Bitboards::undo_move(const Move& move) {
+void Bitboards::undo_move(const Move& move, const BB_State_Info& state_info) {
     change_turn();
-    fifty_move_rule = move.prev_50_move;
+    fifty_move_rule = state_info.fifty_move_rule;
 
     hash_key ^= zobrist.castling(castling_rights);
-    castling_rights = move.prev_castle_flags;
+    castling_rights = state_info.castling_rights;
     hash_key ^= zobrist.castling(castling_rights);
 
     hash_key ^= zobrist.ep(ep_square);
-    ep_square = move.prev_ep_square;
+    ep_square = state_info.ep_square;
     hash_key ^= zobrist.ep(ep_square);
 
     if (move.is_castle()) {

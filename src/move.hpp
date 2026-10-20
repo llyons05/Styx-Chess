@@ -15,30 +15,20 @@ public:
 
     eSpecialMoveFlags move_flag : 3;
 
-    U8 prev_castle_flags : 4;
-    eSquare prev_ep_square : 7;
-    U8 prev_50_move : 7;
-
     Move() : score(0),
              from(A1),
              to(A1),
              piece_from(NUM_PIECE_TYPES),
              piece_to(NUM_PIECE_TYPES),
              piece_captured(NUM_PIECE_TYPES),
-             move_flag(MFLAG_NORMAL),
-             prev_castle_flags(0), 
-             prev_ep_square(NULL_SQUARE),
-             prev_50_move(0) {}
+             move_flag(MFLAG_NORMAL) {}
     
     Move(eSquare from,
          eSquare to,
          ePieceType piece_from,
          ePieceType piece_to,
          ePieceType piece_captured,
-         eSpecialMoveFlags move_flag,
-         U8 prev_castle_flags,
-         eSquare prev_ep_square,
-         U8 prev_50_move)
+         eSpecialMoveFlags move_flag)
          :
          score(0),
          from(from),
@@ -46,10 +36,7 @@ public:
          piece_from(piece_from),
          piece_to(piece_to),
          piece_captured(piece_captured),
-         move_flag(move_flag),
-         prev_castle_flags(prev_castle_flags),
-         prev_ep_square(prev_ep_square),
-         prev_50_move(prev_50_move) {}
+         move_flag(move_flag) {}
 
     inline bool is_capture() const {
         return piece_captured != NUM_PIECE_TYPES;
