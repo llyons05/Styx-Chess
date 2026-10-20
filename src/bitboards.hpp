@@ -2,6 +2,7 @@
 
 #include "move.hpp"
 #include "utils.hpp"
+#include "transposition.hpp"
 
 #include <cstdint>
 #include <bit>
@@ -101,6 +102,14 @@ public:
         return BB64(~bb);
     }
 
+    constexpr BB64 operator==(const BB64& other) const {
+        return bb == other.bb;
+    }
+
+    constexpr BB64 operator!=(const BB64& other) const {
+        return bb != other.bb;
+    }
+
     constexpr bool operator==(U64 n) const {
         return bb == n;
     }
@@ -132,6 +141,16 @@ public:
     }
 };
 
+class BB_State_Info {
+public:
+    U64 hash_key = 0;
+    U8 castling_rights = 0;
+    eSquare ep_square = NULL_SQUARE;
+    U8 fifty_move_rule = 0;
+    BB_State_Info() = default;
+    BB_State_Info(U64 hash_key, U8 castling_rights, eSquare ep_square, U8 fifty_move_rule) : hash_key(hash_key), castling_rights(castling_rights), ep_square(ep_square), fifty_move_rule(fifty_move_rule) {}
+};
+
 class Bitboards {
 public:
     BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
@@ -140,7 +159,8 @@ public:
     eColor stm;
     U8 castling_rights;
     eSquare ep_square;
-    U64 hash_key;
+    U8 fifty_move_rule;
+    U64 hash_key = 0;
 
     Bitboards();
     Bitboards(std::string fen);
@@ -151,6 +171,10 @@ public:
 
     Piece piece_at(eSquare square) const;
     eColor color_at(eSquare square) const;
+
+    BB_State_Info state_info() const {
+        return BB_State_Info(hash_key, castling_rights, ep_square, fifty_move_rule);
+    }
 
     bool occupied(BB64 b) const {
         return !(all() & b).empty();
@@ -197,6 +221,8 @@ private:
     inline Piece pickup_piece(eSquare square);
     inline Piece put_piece(eSquare square, Piece piece);
     void update_castling_rights(const Move& m);
+    void update_ep_square(const Move& m);
+    void change_turn();
 };
 
 constexpr BB64 ROWS[8] = {255ULL, 255ULL << 8, 255ULL << 16, 255ULL << 24, 255ULL << 32, 255ULL << 40, 255ULL << 48, 255ULL << 56};

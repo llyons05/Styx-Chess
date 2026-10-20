@@ -23,7 +23,8 @@ void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSq
             (flag == MFLAG_EP) ? PAWN : (bbs.opp_bb().filled(dest) ? bbs.piece_at(dest).pt : NUM_PIECE_TYPES),
             flag,
             bbs.castling_rights,
-            bbs.ep_square
+            bbs.ep_square,
+            bbs.fifty_move_rule
         ));
     }
 }

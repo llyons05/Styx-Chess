@@ -6,13 +6,13 @@ VERSION ?= latest
 
 CXXFLAGS = -g -O3 -Wall -std=c++23 -DVERSION_STR=$(VERSION)
 
-_MAIN_OBJ_FILES = bitboards.o board.o movegen.o engine.o uci.o main.o
+_MAIN_OBJ_FILES = bitboards.o board.o movegen.o engine.o uci.o transposition.o main.o
 MAIN_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_MAIN_OBJ_FILES))
 
-_TEST_OBJ_FILES = bitboards.o board.o movegen.o perft.o
+_TEST_OBJ_FILES = bitboards.o board.o movegen.o transposition.o perft.o
 TEST_OBJ_FILES = $(patsubst %.o,$(BUILD_DIR)/%.o,$(_TEST_OBJ_FILES))
 
-HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp uci.hpp
+HEADER_FILES = bitboards.hpp board.hpp engine.hpp move.hpp movegen.hpp utils.hpp uci.hpp transposition.hpp
 
 ifeq ($(OS),Windows_NT)
 	TARGET = $(OUTPUT_DIR)/styx_$(VERSION)-windows.exe

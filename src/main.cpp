@@ -17,6 +17,8 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
     std::vector<Move> move_history;
 
     while (true) {
+        if (board.is_draw())
+            break;
         Move_Generator mg(board);
         bool undo = false;
         int legal_movecount = 0;
@@ -78,6 +80,7 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
             m = engine.find_move(board, time_limit);
         }
         board.move(m);
+        std::cout << board.bbs.hash_key << "\n";
         move_history.push_back(m);
         board.print();
     }

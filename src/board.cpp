@@ -5,11 +5,38 @@
 #include <iostream>
 
 Piece Board::move(const Move& m) {
-    return bbs.handle_move(m);
+    Piece result = bbs.handle_move(m);
+    rep_stack[(++stack_index)/* % MAX_GAME_LENGTH */] = bbs.hash_key;
+    return result;
 }
 
 void Board::undo(const Move& m) {
     bbs.undo_move(m);
+    stack_index--;
+}
+
+bool Board::is_draw() {
+    if (bbs.fifty_move_rule >= 100)
+        return true;
+    
+    // if (bbs[WHITE] == (bbs[WHITE, KING] | bbs[WHITE, KNIGHT]))
+    //     return true;
+    // if (bbs[WHITE] == (bbs[WHITE, KING] | bbs[WHITE, BISHOP]))
+    //     return true;
+    // if (bbs[BLACK] == (bbs[BLACK, KING] | bbs[BLACK, KNIGHT]))
+    //     return true;
+    // if (bbs[BLACK] == (bbs[BLACK, KING] | bbs[BLACK, BISHOP]))
+    //     return true;
+
+    int curr = stack_index;
+    int seen = 0;
+    int lowest = stack_index - bbs.fifty_move_rule;
+    while ((curr >= lowest) && (curr > 1) && (seen < 2)) {
+        curr -= 2;
+        if (rep_stack[curr/* % MAX_GAME_LENGTH */] == bbs.hash_key)
+            seen++;
+    }
+    return seen >= 2;
 }
 
 void Board::print() {
