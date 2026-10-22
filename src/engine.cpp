@@ -274,6 +274,17 @@ Score Engine::eval(const Board& board) {
     result -= board.bbs[BLACK, ROOK].bitcount() * 500;
     result -= board.bbs[BLACK, QUEEN].bitcount() * 800;
 
+    result -= (board.bbs[WHITE, KNIGHT] & edges).bitcount() * 10;
+    result += (board.bbs[BLACK, KNIGHT] & edges).bitcount() * 10;
+
+    result += (board.bbs[WHITE] & small_center).bitcount() * 10;
+    result += (board.bbs[WHITE] & big_center).bitcount() * 5;
+    result -= (board.bbs[BLACK] & small_center).bitcount() * 10;
+    result -= (board.bbs[BLACK] & big_center).bitcount() * 5;
+
+    result += (board.bbs[WHITE, PAWN] & ROWS[6]).bitcount() * 25;
+    result -= (board.bbs[BLACK, PAWN] & ROWS[1]).bitcount() * 25;
+
     if (board.stm() == BLACK)
         return -result;
     return result;

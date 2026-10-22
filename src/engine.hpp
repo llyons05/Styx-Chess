@@ -54,3 +54,12 @@ private:
         return Move_Generator::is_attacked(board, !c, board.bbs.king_sq(c));
     }
 };
+
+constexpr BB64 big_center = C3 | D3 | E3 | F3
+                          | C4 | D4 | E4 | F4
+                          | C5 | D5 | E5 | F5
+                          | C6 | D6 | E6 | F6;
+
+constexpr BB64 small_center = D4 | E4 | D5 | E5;
+
+constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_B] | COLS[0] | COLS[7];

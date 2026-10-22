@@ -147,6 +147,29 @@ void Move_Generator::gen_king_moves() {
     }
 }
 
+BB64 Move_Generator::attacks(const Board& board, eColor attackers) {
+    BB64 result = (attackers == WHITE) ? pawn_attacks<WHITE>(board) : pawn_attacks<BLACK>(board);
+
+    BB64 knights = board.bbs[attackers, KNIGHT];
+    while (!knights.empty())
+        result |= knight_moves[knights.pop()] & ~board.bbs[attackers];
+
+    BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
+    result |= valid_sliding_moves<NORTHEAST>(diags, board, attackers);
+    result |= valid_sliding_moves<SOUTHEAST>(diags, board, attackers);
+    result |= valid_sliding_moves<SOUTHWEST>(diags, board, attackers);
+    result |= valid_sliding_moves<NORTHWEST>(diags, board, attackers);
+    
+    BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
+    result |= valid_sliding_moves<NORTH>(straights, board, attackers);
+    result |= valid_sliding_moves<EAST>(straights, board, attackers);
+    result |= valid_sliding_moves<SOUTH>(straights, board, attackers);
+    result |= valid_sliding_moves<WEST>(straights, board, attackers);
+    
+    BB64 king = board.bbs[attackers, KING];
+    result |= king_moves[king.lsb()] & ~board.bbs[attackers];
+    return result;
+}
 
 bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) {
     BB64 pawn_threats = (attackers == WHITE) ? pawn_attacks<WHITE>(board) : pawn_attacks<BLACK>(board);

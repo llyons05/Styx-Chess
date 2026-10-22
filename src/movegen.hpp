@@ -43,6 +43,7 @@ public:
     }
 
     static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
+    static BB64 attacks(const Board& board, eColor attackers);
 
 private:
     const Board& board;
