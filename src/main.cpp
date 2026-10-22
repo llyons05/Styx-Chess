@@ -34,7 +34,7 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
             break;
         }
         Move m;
-        if (false) {
+        if (board.stm() == player_color) {
             eSquare square = NULL_SQUARE;
             std::vector<Move> legal_moves;
             while (legal_moves.empty()) {
