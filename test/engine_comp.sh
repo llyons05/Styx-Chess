@@ -13,6 +13,6 @@ cd "$(dirname "$0")/.."
     -engine name=$1 cmd=$1 \
     -engine name=$2 cmd=$2 \
     -each st=$3 timemargin=50 \
-    -rounds $4 -openings file=./resources/8moves_v3.pgn format=pgn -srand $(date +%s) \
+    -rounds $4 -openings file=./resources/8moves_v3.pgn format=pgn order=random -srand $(date +%s) \
     -sprt elo0=0 elo1=5 alpha=0.1 beta=0.1 \
     -concurrency 8

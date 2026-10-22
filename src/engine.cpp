@@ -135,6 +135,8 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
 
         if (move_score > alpha) {
             chosen_move_idx = i;
+            best_move = m;
+
             alpha = move_score;
             if (alpha >= beta) {
                 break;
@@ -142,12 +144,8 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
         }
     }
 
-    if (!search_cancelled) {
-        assert(abs(best_val) < INF_SCORE);
-        best_move = root_mg[chosen_move_idx];
-        root_mg[chosen_move_idx].score = depth*100;
-        // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
-    }
+    root_mg[chosen_move_idx].score = depth*100;
+    // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
     return best_val;
 }
 
