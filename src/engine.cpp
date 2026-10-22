@@ -285,6 +285,13 @@ Score Engine::eval(const Board& board) {
     result += (board.bbs[WHITE, PAWN] & ROWS[6]).bitcount() * 25;
     result -= (board.bbs[BLACK, PAWN] & ROWS[1]).bitcount() * 25;
 
+    BB64 white_attacks = Move_Generator::attacks(board, WHITE);
+    BB64 black_attacks = Move_Generator::attacks(board, BLACK);
+    result += white_attacks.bitcount() * 5;
+    result += (white_attacks & board.bbs[BLACK]).bitcount() * 10;
+    result -= black_attacks.bitcount() * 5;
+    result -= (black_attacks & board.bbs[WHITE]).bitcount() * 10;
+
     if (board.stm() == BLACK)
         return -result;
     return result;
