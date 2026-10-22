@@ -156,15 +156,16 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (search_cancelled)
         return 0;
 
-    stack->state_info = board.bbs.state_info();
-    if (board.is_draw()) {
-        return 0;
-    }
-
+    
     bool flag_in_check = in_check(board, board.stm());
+    if (flag_in_check) depth++;
 
     if (depth <= 0)
         return q_search(board, stack, alpha, beta);
+
+    if (board.is_draw()) {
+        return 0;
+    }
         
     stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
