@@ -66,6 +66,10 @@ public:
         return from != to;
     }
 
+    inline int exchange_val() const {
+        return is_capture() ? piece_captured - piece_from : 0;
+    }
+
     std::string long_alg() const {
         std::string result = square_str(from) + square_str(to);
         if (is_promo())

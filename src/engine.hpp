@@ -40,9 +40,10 @@ private:
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
     Score search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
+    Score q_search(Board& board, Search_Stack* stack, Score alpha, Score beta);
 
-    bool do_move(Board& board, Search_Stack* stack, Move& move);
-    void undo_move(Board& board, Search_Stack* stack, Move& move);
+    bool do_move(Board& board, Search_Stack* stack, const Move& move);
+    void undo_move(Board& board, Search_Stack* stack, const Move& move);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
