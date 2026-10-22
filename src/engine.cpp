@@ -43,7 +43,7 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
 }
 
 // Return true if legal move
-bool Engine::do_move(Board& board, Search_Stack* stack, Move& move) {
+bool Engine::do_move(Board& board, Search_Stack* stack, const Move& move) {
     board.move(move);
     stack->current_move = move;
 
@@ -51,7 +51,7 @@ bool Engine::do_move(Board& board, Search_Stack* stack, Move& move) {
 }
 
 
-void Engine::undo_move(Board& board, Search_Stack* stack, Move& move) {
+void Engine::undo_move(Board& board, Search_Stack* stack, const Move& move) {
     board.undo(move, stack->state_info);
 }
 
@@ -143,7 +143,8 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             }
         }
     }
-
+    if (!search_cancelled)
+        assert(best_val > -INF_SCORE);
     root_mg[chosen_move_idx].score = depth*100;
     // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
     return best_val;
@@ -157,16 +158,15 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
     stack->state_info = board.bbs.state_info();
     if (board.is_draw()) {
-        // std::cout << "DRAW FOUND at depth " << stack->ply << ", move was " << (stack-1)->current_move.long_alg() << "\n";
-        // board.print();
         return 0;
     }
 
     bool flag_in_check = in_check(board, board.stm());
 
     if (depth <= 0)
-        return eval(board);
-
+        return q_search(board, stack, alpha, beta);
+        
+    stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack);
     Score best_val = -INF_SCORE;
@@ -199,7 +199,64 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             return 0;
     }
 
-    return best_val;
+    return alpha;
+}
+
+
+Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score beta) {
+    nodes_traversed++;
+    set_search_cancelled();
+    if (search_cancelled)
+        return 0;
+
+    if (board.is_draw()) {
+        return 0;
+    }
+
+    Score static_eval = eval(board);
+
+    if (static_eval >= beta)
+        return beta;
+    if (static_eval > alpha)
+        alpha = static_eval;
+    
+    stack->state_info = board.bbs.state_info();
+    Move_Generator mg(board);
+    set_movescores(board, mg, stack);
+
+    int legal_moves = 0;
+    for (size_t i = 0; i < mg.movelist.size(); i++) {
+        Move& m = mg.next_move(i);
+        if (!do_move(board, stack, m)) {
+            undo_move(board, stack, m);
+            continue;
+        }
+        legal_moves++;
+        if (!m.is_capture()) {
+            undo_move(board, stack, m);
+            continue;
+        }
+        Score val = -q_search(board, stack+1, -beta, -alpha);
+        undo_move(board, stack, m);
+        
+        if (search_cancelled)
+            break;
+        
+        if (val > alpha) {
+            alpha = val;
+            if (val >= beta)
+                break;
+        }
+    }
+
+    if (legal_moves == 0) {
+        if (in_check(board, board.stm()))
+            return -MAX_SCORE + stack->ply;
+		else
+            return 0;
+    }
+
+    return alpha;
 }
 
 Score Engine::eval(const Board& board) {
