@@ -63,6 +63,7 @@ Score Engine::search_iterate(Board& board) {
 
     Depth current_depth = 1;
     Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
+    UCI_Command::info(nodes_traversed, current_depth, start_time, final_val);
 
     while ((abs(final_val) < MIN_WINNING_SCORE) && !search_cancelled && (current_depth < MAX_PLY)) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
@@ -80,13 +81,12 @@ Score Engine::search_widen(Board& board, Move_Generator& root_mg, Search_Stack* 
     Score alpha = std::max(prev_score - window_size, -INF_SCORE);
     Score beta  = std::min(prev_score + window_size, INF_SCORE);
     Score score = prev_score;
-    Move prev_best = best_move;
     U8 fails = 0;
     while (true) {
         score = search_root(board, root_mg, stack, alpha, beta, depth);
         if (search_cancelled) {
-            score = prev_score;
-            best_move = prev_best;
+            if (score <= -INF_SCORE)
+                score = prev_score;
             break;
         }
 
@@ -114,7 +114,6 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     nodes_traversed++;
     set_search_cancelled();
     int chosen_move_idx = 0;
-    Score best_val = -INF_SCORE;
     stack->state_info = board.bbs.state_info();
 
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
@@ -125,29 +124,26 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             m.score = -INF_SCORE;
             continue;
         }
-        Score move_score = -search(board, stack+1, -beta, -alpha, depth - 1);
+        Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
         undo_move(board, stack, m);
-        
-        best_val = std::max(move_score, best_val);
 
         if (search_cancelled)
             break;
 
-        if (move_score > alpha) {
+        if (val > alpha) {
             chosen_move_idx = i;
             best_move = m;
-
-            alpha = move_score;
+            alpha = val;
             if (alpha >= beta) {
                 break;
             }
         }
     }
     if (!search_cancelled)
-        assert(best_val > -INF_SCORE);
+        assert(alpha > -INF_SCORE);
     root_mg[chosen_move_idx].score = depth*100;
     // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
-    return best_val;
+    return alpha;
 }
 
 Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth) {
@@ -155,7 +151,6 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     set_search_cancelled();
     if (search_cancelled)
         return 0;
-
     
     bool flag_in_check = in_check(board, board.stm());
     if (flag_in_check) depth++;
@@ -170,7 +165,6 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack);
-    Score best_val = -INF_SCORE;
     int moves_tried = 0;
     for (size_t i = 0; i < mg.movelist.size(); i++) {
         Move& m = mg.next_move(i);
@@ -185,7 +179,6 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         if (search_cancelled)
             break;
 
-        best_val = std::max(val, best_val);
         if (val > alpha) {
             alpha = val;
             if (alpha >= beta) {
