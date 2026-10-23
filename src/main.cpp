@@ -10,7 +10,7 @@
 #include <syncstream>
 #include <vector>
 
-void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
+void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
     Board board(fen);
     Engine engine;
     board.print();
@@ -79,7 +79,7 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
             m = legal_moves[move_index];
         }
         else {
-            m = engine.find_move(board, time_limit);
+            m = engine.find_move(board, tc_info);
         }
         BB_State_Info info = board.bbs.state_info();
         board.move(m);
@@ -97,8 +97,8 @@ void cli_mode(eColor player_color, TimePoint time_limit, std::string fen) {
         std::cout << "STALEMATE\n";
 }
 
-int engine_go(Board& board, Engine& engine, TimePoint time_limit) {
-    Move best_move = engine.find_move(board, time_limit);
+int engine_go(Board& board, Engine& engine, const Time_Info& tc_info) {
+    Move best_move = engine.find_move(board, tc_info);
     UCI_Command::bestmove(best_move);
     return 0;
 }
@@ -117,7 +117,7 @@ void comp_mode() {
         const UCI_Command com(line, board, engine, engine_future.valid());
 
         if (com.engine_go) {
-            engine_future = std::async(std::launch::async, engine_go, std::ref(board), std::ref(engine), com.time_limit);
+            engine_future = std::async(std::launch::async, engine_go, std::ref(board), std::ref(engine), std::ref(com.tc_info));
         }
 
         if (com.engine_quit) {
@@ -129,10 +129,11 @@ void comp_mode() {
 
 int main(int argc, char* argv[]) {
     if ((argc >= 2) && (std::string(argv[1]) == "-c")) {
+        Time_Info tc_info;
         eColor player_color = ((argc >= 3) && (std::string(argv[2]) == "w")) ? WHITE : BLACK;
-        TimePoint time_limit = (argc >= 4) ? std::stoll(argv[3]) : 1000;
+        tc_info.movetime = (argc >= 4) ? std::stoll(argv[3]) : 1000;
         std::string fen = (argc >= 5) ? argv[4] : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-        cli_mode(player_color, time_limit, fen);
+        cli_mode(player_color, tc_info, fen);
     }
     else {
         comp_mode();

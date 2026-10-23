@@ -13,7 +13,7 @@ public:
     bool engine_go;
     bool engine_stop;
     bool engine_quit;
-    TimePoint time_limit;
+    Time_Info tc_info;
 
     UCI_Command(const std::string& command, Board& board, Engine& engine, bool engine_running);
 

@@ -15,19 +15,31 @@ Engine& Engine::operator=(const Engine& other) {
     return *this;
 }
 
-Move Engine::find_move(Board& board, TimePoint time_limit) {
-    prepare_for_search(time_limit);
+Move Engine::find_move(Board& board, const Time_Info& tc_info) {
+    prepare_for_search(board, tc_info);
     search_iterate(board);
     
     return best_move;
 }
 
-void Engine::prepare_for_search(TimePoint time_limit) {
-    this->time_limit = time_limit;
+void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
+    time_limit = get_searchtime(board, tc_info);
     best_move = Move();
     nodes_traversed = 0;
     start_time = get_time();
     search_cancelled = false;
+}
+
+TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
+    const TimePoint buffer = 50;
+    TimePoint remaining = tc_info.remaining[board.stm()];
+    TimePoint inc = tc_info.inc[board.stm()];
+    if (remaining > 0) {
+        if (tc_info.moves_to_go > 0)
+            return (remaining - buffer)/tc_info.moves_to_go + inc;
+        return remaining/20 + inc/2;
+    }
+    return tc_info.movetime;
 }
 
 void Engine::init_stack(Search_Stack* stack_base) {
@@ -63,7 +75,7 @@ Score Engine::search_iterate(Board& board) {
 
     Depth current_depth = 1;
     Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
-    UCI_Command::info(nodes_traversed, current_depth, start_time, final_val);
+    UCI_Command::info(nodes_traversed, 1, start_time, final_val);
 
     while ((abs(final_val) < MIN_WINNING_SCORE) && !search_cancelled && (current_depth < MAX_PLY)) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
