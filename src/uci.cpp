@@ -13,7 +13,7 @@ UCI_Command::UCI_Command(const std::string& command, Board& board, Engine& engin
     engine_go(false),
     engine_stop(false),
     engine_quit(false),
-    time_limit(INF_TIME),
+    tc_info(),
     engine_running(engine_running) 
     {
     if (command == "uci")
@@ -126,7 +126,27 @@ void UCI_Command::position() {
 void UCI_Command::go() {
     size_t movetime = command.find("movetime");
     if (movetime != std::string::npos) {
-        sscanf(command.c_str() + movetime, "movetime %lld", &time_limit);
+        sscanf(command.c_str() + movetime, "movetime %lld", &tc_info.movetime);
+    }
+    size_t wtime = command.find("wtime");
+    if (wtime != std::string::npos) {
+        sscanf(command.c_str() + wtime, "wtime %lld", &tc_info.remaining[WHITE]);
+    }
+    size_t btime = command.find("btime");
+    if (btime != std::string::npos) {
+        sscanf(command.c_str() + btime, "btime %lld", &tc_info.remaining[BLACK]);
+    }
+    size_t winc = command.find("winc");
+    if (winc != std::string::npos) {
+        sscanf(command.c_str() + winc, "winc %lld", &tc_info.inc[WHITE]);
+    }
+    size_t binc = command.find("binc");
+    if (binc != std::string::npos) {
+        sscanf(command.c_str() + binc, "binc %lld", &tc_info.inc[BLACK]);
+    }
+    size_t moves_to_go = command.find("movestogo");
+    if (moves_to_go != std::string::npos) {
+        sscanf(command.c_str() + moves_to_go, "movestogo %d", &tc_info.moves_to_go);
     }
     engine.external_cancel.store(false, std::memory_order::relaxed);
     engine_go = true;

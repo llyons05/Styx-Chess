@@ -74,6 +74,13 @@ constexpr eColor operator!(eColor color) {
     }
 }
 
+struct Time_Info {
+    TimePoint movetime = INF_TIME;
+    TimePoint remaining[NUM_COLORS]{0};
+    TimePoint inc[NUM_COLORS]{0};
+    int moves_to_go = 0;
+};
+
 
 constexpr U8 relative_row(eColor c, U8 row) {
     return (c == WHITE) ? 0 + row : 7 - row;

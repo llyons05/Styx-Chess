@@ -26,12 +26,13 @@ public:
     Engine() {}
     Engine& operator=(const Engine& other);
 
-    Move find_move(Board& board, TimePoint time_limit);
+    Move find_move(Board& board, const Time_Info& tc_info);
     
 private:
     Move best_move = Move();
 
-    void prepare_for_search(TimePoint time_limit);
+    void prepare_for_search(const Board& board, const Time_Info& tc_info);
+    TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
     void init_stack(Search_Stack* stack_base);
     void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack);
 
