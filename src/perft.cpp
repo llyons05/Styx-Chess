@@ -34,7 +34,6 @@ U64 perft(Board& board, int depth) {
     if (depth <= 0)
         return 1;
 
-    int legal_moves = 0;
     for (const Move& move : mg.movelist) {
         board.move(move);
         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm()))) {
@@ -45,7 +44,6 @@ U64 perft(Board& board, int depth) {
                 promotions += move.is_promo();
             }
             result += perft(board, depth - 1);
-            legal_moves++;
         }
         board.undo(move, info);
     }
@@ -72,15 +70,7 @@ void print_results(int depth, U64 leaf_nodes, U64 expected, TimePoint test_durat
     std::cout << "kNodes/Sec: " << double(total_nodes) / double(test_duration) << "\n";
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << " <depth> <expected nodes> <fen>\n";
-        return 1;
-    }
-    int depth = std::stoi(argv[1]);
-    U64 expected_nodes = std::stoull(argv[2]);
-    std::string fen = argv[3];
-
+bool run_tests(int depth, U64 expected_nodes, std::string fen) {
     std::cout << "Testing position: " << fen << "\n";
     Board b(fen);
     b.print();

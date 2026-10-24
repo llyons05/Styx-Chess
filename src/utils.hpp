@@ -281,3 +281,5 @@ inline eSquare get_valid_square() {
     }
     return str_to_square(str);
 }
+
+bool run_tests(int depth, U64 expected_nodes, std::string fen);
