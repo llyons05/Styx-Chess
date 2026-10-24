@@ -24,7 +24,7 @@ public:
     void undo(const Move& m, const BB_State_Info& state_info);
     bool is_draw();
 
-    void print();
+    void print() const;
 private:
     U64 rep_stack[MAX_GAME_LENGTH];
     int stack_index;

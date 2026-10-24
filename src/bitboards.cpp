@@ -207,6 +207,8 @@ inline Piece Bitboards::put_piece(eSquare square, Piece piece) {
     color_bbs[piece.color].fill(square);
     piece_bbs[piece.color][piece.pt].fill(square);
     pieces[square] = piece;
+    piece_counts[piece.color][piece.pt]++;
+    material[piece.color] += piece.value();
 
     hash_key ^= zobrist[piece.color, piece.pt, square];
     return taken_piece;
@@ -220,6 +222,9 @@ inline Piece Bitboards::pickup_piece(eSquare square) {
         color_bbs[piece.color].zero(square);
         piece_bbs[piece.color][piece.pt].zero(square);
         pieces[square] = Piece();
+        piece_counts[piece.color][piece.pt]--;
+        material[piece.color] -= piece.value();
+
         hash_key ^= zobrist[piece.color, piece.pt, square];
     }
     return piece;

@@ -267,37 +267,61 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
 
 Score Engine::eval(const Board& board) {
     Score result = 0;
-    result += board.bbs[WHITE, PAWN].bitcount() * 100;
-    result += board.bbs[WHITE, BISHOP].bitcount() * 300;
-    result += board.bbs[WHITE, KNIGHT].bitcount() * 300;
-    result += board.bbs[WHITE, ROOK].bitcount() * 500;
-    result += board.bbs[WHITE, QUEEN].bitcount() * 800;
-    
-    result -= board.bbs[BLACK, PAWN].bitcount() * 100;
-    result -= board.bbs[BLACK, BISHOP].bitcount() * 300;
-    result -= board.bbs[BLACK, KNIGHT].bitcount() * 300;
-    result -= board.bbs[BLACK, ROOK].bitcount() * 500;
-    result -= board.bbs[BLACK, QUEEN].bitcount() * 800;
 
-    result -= (board.bbs[WHITE, KNIGHT] & edges).bitcount() * 10;
-    result += (board.bbs[BLACK, KNIGHT] & edges).bitcount() * 10;
+    // This gets lower the fewer pieces there are
+    int game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
+                   + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
+    game_phase = std::min(24, game_phase);
+    int midgame_weight = game_phase;
+    int endgame_weight = 24 - game_phase;
 
-    result += (board.bbs[WHITE] & small_center).bitcount() * 10;
-    result += (board.bbs[WHITE] & big_center).bitcount() * 5;
-    result -= (board.bbs[BLACK] & small_center).bitcount() * 10;
-    result -= (board.bbs[BLACK] & big_center).bitcount() * 5;
+    Score white_mat = board.bbs.material[WHITE];
+    Score black_mat = board.bbs.material[BLACK];
 
-    result += (board.bbs[WHITE, PAWN] & ROWS[6]).bitcount() * 25;
-    result -= (board.bbs[BLACK, PAWN] & ROWS[1]).bitcount() * 25;
+    Score knight_score = ((board.bbs[BLACK, KNIGHT] & edges).bitcount() - (board.bbs[WHITE, KNIGHT] & edges).bitcount()) * 10;
+
+    Score center_score = ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
+                       + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
+
+    Score pawn_score = pawn_eval(board);
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
-    result += white_attacks.bitcount() * 5;
-    result += (white_attacks & board.bbs[BLACK]).bitcount() * 10;
-    result -= black_attacks.bitcount() * 5;
-    result -= (black_attacks & board.bbs[WHITE]).bitcount() * 10;
+    Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 5;
+    Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 10;
+
+    result += white_mat - black_mat;
+    result += threat_score + attack_score;
+
+    Score midgame_score = knight_score + center_score;
+    Score endgame_score = pawn_score;
+
+    result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
 
     if (board.stm() == BLACK)
         return -result;
+    return result;
+}
+
+
+Score Engine::pawn_eval(const Board& board) {
+    Score result = 0;
+    Score development_val = 0;
+    BB64 white_pawns = board.bbs[WHITE, PAWN];
+    while (white_pawns) {
+        eSquare s = white_pawns.pop();
+        U8 row = square_row(s);
+        if (row >= 4)
+            development_val += row;
+    }
+    BB64 black_pawns = board.bbs[BLACK, PAWN];
+    while (black_pawns) {
+        eSquare s = black_pawns.pop();
+        U8 row = square_row(s);
+        if (row <= 3)
+            development_val -= 8 - row;
+    }
+
+    result += development_val*5;
     return result;
 }

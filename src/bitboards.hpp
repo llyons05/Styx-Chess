@@ -153,9 +153,11 @@ public:
 
 class Bitboards {
 public:
-    BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
-    BB64 color_bbs[NUM_COLORS];
-    Piece pieces[64];
+    BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES]{0};
+    U8 piece_counts[NUM_COLORS][NUM_PIECE_TYPES]{0};
+    Piece pieces[64]{};
+    BB64 color_bbs[NUM_COLORS]{0};
+    Score material[NUM_COLORS]{0};
     eColor stm;
     U8 castling_rights;
     eSquare ep_square;
