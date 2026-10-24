@@ -268,13 +268,6 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
 Score Engine::eval(const Board& board) {
     Score result = 0;
 
-    // This gets lower the fewer pieces there are
-    int game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
-                   + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
-    game_phase = std::min(24, game_phase);
-    int midgame_weight = game_phase;
-    int endgame_weight = 24 - game_phase;
-
     Score white_mat = board.bbs.material[WHITE];
     Score black_mat = board.bbs.material[BLACK];
 
@@ -283,7 +276,7 @@ Score Engine::eval(const Board& board) {
     Score center_score = ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
                        + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
-    Score pawn_score = pawn_eval(board);
+    Score pawn_score = ((board.bbs[WHITE, PAWN] & ROWS[6]).bitcount() - (board.bbs[BLACK, PAWN] & ROWS[1]).bitcount()) * 25;
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
@@ -291,12 +284,7 @@ Score Engine::eval(const Board& board) {
     Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 10;
 
     result += white_mat - black_mat;
-    result += threat_score + attack_score;
-
-    Score midgame_score = knight_score + center_score;
-    Score endgame_score = pawn_score;
-
-    result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
+    result += knight_score + center_score + pawn_score + attack_score + threat_score;
 
     if (board.stm() == BLACK)
         return -result;
