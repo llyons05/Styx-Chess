@@ -47,6 +47,7 @@ private:
     
     Score eval(const Board& board);
     Score pawn_eval(const Board& board);
+    BB64 passed_mask(BB64 pawns, eColor color);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)

@@ -276,7 +276,7 @@ Score Engine::eval(const Board& board) {
     Score center_score = ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
                        + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
-    Score pawn_score = ((board.bbs[WHITE, PAWN] & ROWS[6]).bitcount() - (board.bbs[BLACK, PAWN] & ROWS[1]).bitcount()) * 25;
+    Score pawn_score = pawn_eval(board);
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
@@ -300,14 +300,14 @@ Score Engine::pawn_eval(const Board& board) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
         if (row >= 4)
-            development_val += row;
+            development_val += row - 3;
     }
     BB64 black_pawns = board.bbs[BLACK, PAWN];
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
         if (row <= 3)
-            development_val -= 8 - row;
+            development_val -= 4 - row;
     }
 
     result += development_val*5;

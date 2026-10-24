@@ -68,6 +68,16 @@ public:
             : D == SOUTHWEST ? (shift_mask & bb) >> 9*Shifts
             :/*D == NORTHWEST*/(shift_mask & bb) << 7*Shifts;
     }
+
+    template<Direction D>
+    constexpr BB64 smear() const {
+        static_assert(D < NUM_DIRECTIONS);
+        BB64 n = bb;
+        n |= shift_bb<D, 1>(n);
+        n |= shift_bb<D, 2>(n);
+        n |= shift_bb<D, 4>(n);
+        return n;
+    }
     
     constexpr BB64 operator&(const BB64& other) const {
         return BB64(bb & other.bb);
