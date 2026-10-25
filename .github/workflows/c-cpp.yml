@@ -46,17 +46,15 @@ jobs:
 
       - name: Run tests
         run: |
-          pwd
           set -o pipefail
           ./test/perft.sh ../engines/styx_${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
         shell: bash
 
       - name: Build Linux project
         run: |
-          cd src
           mkdir -p "build-artifacts/${VERSION}"
-          find ../engines -maxdepth 2 -type f -executable -exec cp -p {} "../build-artifacts/${VERSION}/" \;
-          ls -R ../build-artifacts
+          find ./engines -maxdepth 2 -type f -executable -exec cp -p {} "./build-artifacts/${VERSION}/" \;
+          ls -R ./build-artifacts
         shell: bash
 
       - name: Upload Linux artifact
