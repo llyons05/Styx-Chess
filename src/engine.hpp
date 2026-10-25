@@ -47,7 +47,6 @@ private:
     
     Score eval(const Board& board);
     Score pawn_eval(const Board& board);
-    BB64 passed_mask(BB64 pawns, eColor color);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
@@ -66,4 +65,4 @@ constexpr BB64 big_center = C3 | D3 | E3 | F3
 
 constexpr BB64 small_center = D4 | E4 | D5 | E5;
 
-constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_B] | COLS[0] | COLS[7];
+constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_H] | COLS[0] | COLS[7];

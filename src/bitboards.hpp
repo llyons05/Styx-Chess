@@ -73,9 +73,9 @@ public:
     constexpr BB64 smear() const {
         static_assert(D < NUM_DIRECTIONS);
         BB64 n = bb;
-        n |= shift_bb<D, 1>(n);
-        n |= shift_bb<D, 2>(n);
-        n |= shift_bb<D, 4>(n);
+        n |= n.shift<D,1>();
+        n |= n.shift<D,2>();
+        n |= n.shift<D,4>();
         return n;
     }
     

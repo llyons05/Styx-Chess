@@ -267,6 +267,11 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
 
 Score Engine::eval(const Board& board) {
     Score result = 0;
+    int game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
+                   + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
+    game_phase = std::min(24, game_phase);
+    int midgame_weight = game_phase;
+    int endgame_weight = 24 - game_phase;
 
     Score white_mat = board.bbs.material[WHITE];
     Score black_mat = board.bbs.material[BLACK];
@@ -284,7 +289,12 @@ Score Engine::eval(const Board& board) {
     Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 10;
 
     result += white_mat - black_mat;
-    result += knight_score + center_score + pawn_score + attack_score + threat_score;
+    result += threat_score + attack_score + knight_score;
+
+    Score midgame_score = center_score;
+    Score endgame_score = pawn_score;
+
+    result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
 
     if (board.stm() == BLACK)
         return -result;
