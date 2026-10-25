@@ -47,7 +47,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          ./test/perft.sh ./engines/styx-${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
+          ./test/perft.sh engines/styx_${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
         shell: bash
 
       - name: Build Linux project
@@ -62,7 +62,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: styx-${{ steps.artifact_version.outputs.version }}-linux
+          name: styx_${{ steps.artifact_version.outputs.version }}-linux
           path: build-artifacts/
 
   build-windows:
@@ -109,7 +109,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: styx-${{ steps.artifact_version.outputs.version }}-windows.exe
+          name: styx_${{ steps.artifact_version.outputs.version }}-windows.exe
           path: build-artifacts/
 
   release:
@@ -128,13 +128,13 @@ jobs:
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: styx-${{ steps.artifact_version.outputs.version }}-linux
+          name: styx_${{ steps.artifact_version.outputs.version }}-linux
           path: release-assets/linux
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: styx-${{ steps.artifact_version.outputs.version }}-windows.exe
+          name: styx_${{ steps.artifact_version.outputs.version }}-windows.exe
           path: release-assets/windows
 
       - name: Create GitHub release and upload binaries
