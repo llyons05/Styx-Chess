@@ -1,4 +1,4 @@
 #include "transposition.hpp"
 
-PRNG rng(time(NULL));
+PRNG rng(1070372);
 Zobrist zobrist;

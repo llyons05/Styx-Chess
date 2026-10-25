@@ -59,13 +59,15 @@ public:
     Score eval  = 0;
     Depth depth = -1;
     eEntry_Type entry_type = TT_EXACT;
+    U8 best_move_id = 255;
 
     TT_Entry() {};
 
-    inline void update(U64 hash, Score eval, Depth depth, eEntry_Type entry_type) {
+    inline void update(U64 hash, Score eval, Depth depth, U8 best_move_id, eEntry_Type entry_type) {
         this->hash = hash;
         this->eval = eval;
         this->depth = depth;
+        this->best_move_id = best_move_id;
         this->entry_type = entry_type;
     }
 
@@ -105,7 +107,7 @@ public:
         return at(hash).hash == hash;
     }
 
-    inline void store(U64 hash, Score eval, Depth depth, int ply, eEntry_Type entry_type) {
+    inline void store(U64 hash, Score eval, Depth depth, int ply, U8 best_move_id, eEntry_Type entry_type) {
         TT_Entry& entry = at(hash);
         if ((entry.hash == hash) && (entry.depth > depth))
             return;
@@ -115,21 +117,6 @@ public:
             else          eval -= ply;
         }
 
-        entry.update(hash, eval, depth, entry_type);
-    }
-
-
-private:
-    static U64 round_down_size(U64 bytes) {
-        if (bytes & (bytes - 1)) {
-            bytes--;
-            for (int i = 1; i < 64; i=i*2) {
-                bytes |= bytes >> i;
-            }
-            bytes++;
-            bytes >>= 1;
-        }
-        assert(bytes >= sizeof(TT_Entry));
-        return (bytes / sizeof(TT_Entry)) - 1;
+        entry.update(hash, eval, depth, best_move_id, entry_type);
     }
 };

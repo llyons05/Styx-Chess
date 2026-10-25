@@ -36,7 +36,7 @@ private:
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
     void init_stack(Search_Stack* stack_base);
-    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack);
+    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
 
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
