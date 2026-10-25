@@ -97,11 +97,15 @@ enum ePieceType : U8 {
     NUM_PIECE_TYPES
 };
 
-
 constexpr ePieceType operator++(ePieceType& piece, int) {
     ePieceType temp = piece;
     piece = static_cast<ePieceType>((piece + 1) % (NUM_PIECE_TYPES + 1));
     return temp;
+}
+
+constexpr Score mat_val(ePieceType pt) {
+    constexpr Score vals[NUM_PIECE_TYPES+1] = {100, 300, 300, 500, 900, 0, 0};
+    return vals[pt];
 }
 
 
@@ -140,6 +144,7 @@ public:
     }
     constexpr Piece(eColor color, ePieceType pt) : color(color), pt(pt) {}
     constexpr bool is_null() const { return (color == NUM_COLORS) || (pt == NUM_PIECE_TYPES); }
+    constexpr Score value() const { return mat_val(pt); }
 };
 
 enum eSquare : U8 {
@@ -161,9 +166,17 @@ constexpr eSquare operator++(eSquare& square, int) {
     return temp;
 }
 
+constexpr U8 square_row(eSquare square) {
+    return square / 8;
+}
+
+constexpr U8 square_col(eSquare square) {
+    return square % 8;
+}
+
 constexpr std::string square_str(eSquare square) {
-    int col = square % 8;
-    int row = square / 8;
+    U8 col = square_col(square);
+    U8 row = square_row(square);
     return "abcdefgh"[col] + std::to_string(row+1);
 }
 
@@ -268,3 +281,5 @@ inline eSquare get_valid_square() {
     }
     return str_to_square(str);
 }
+
+bool run_tests(int depth, U64 expected_nodes, std::string fen);

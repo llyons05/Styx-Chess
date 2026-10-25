@@ -68,6 +68,16 @@ public:
             : D == SOUTHWEST ? (shift_mask & bb) >> 9*Shifts
             :/*D == NORTHWEST*/(shift_mask & bb) << 7*Shifts;
     }
+
+    template<Direction D>
+    constexpr BB64 smear() const {
+        static_assert(D < NUM_DIRECTIONS);
+        BB64 n = bb;
+        n |= n.shift<D,1>();
+        n |= n.shift<D,2>();
+        n |= n.shift<D,4>();
+        return n;
+    }
     
     constexpr BB64 operator&(const BB64& other) const {
         return BB64(bb & other.bb);
@@ -153,9 +163,11 @@ public:
 
 class Bitboards {
 public:
-    BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES];
-    BB64 color_bbs[NUM_COLORS];
-    Piece pieces[64];
+    BB64 piece_bbs[NUM_COLORS][NUM_PIECE_TYPES]{0};
+    U8 piece_counts[NUM_COLORS][NUM_PIECE_TYPES]{0};
+    Piece pieces[64]{};
+    BB64 color_bbs[NUM_COLORS]{0};
+    Score material[NUM_COLORS]{0};
     eColor stm;
     U8 castling_rights;
     eSquare ep_square;

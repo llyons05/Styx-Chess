@@ -36,15 +36,17 @@ private:
     void init_stack(Search_Stack* stack_base);
     void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack);
 
-    Score eval(const Board& board);
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
     Score search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score q_search(Board& board, Search_Stack* stack, Score alpha, Score beta);
-
+    
     bool do_move(Board& board, Search_Stack* stack, const Move& move);
     void undo_move(Board& board, Search_Stack* stack, const Move& move);
+    
+    Score eval(const Board& board);
+    Score pawn_eval(const Board& board);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
@@ -63,4 +65,4 @@ constexpr BB64 big_center = C3 | D3 | E3 | F3
 
 constexpr BB64 small_center = D4 | E4 | D5 | E5;
 
-constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_B] | COLS[0] | COLS[7];
+constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_H] | COLS[0] | COLS[7];

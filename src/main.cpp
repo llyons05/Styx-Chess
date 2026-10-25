@@ -130,10 +130,20 @@ void comp_mode() {
 int main(int argc, char* argv[]) {
     if ((argc >= 2) && (std::string(argv[1]) == "-c")) {
         Time_Info tc_info;
-        eColor player_color = ((argc >= 3) && (std::string(argv[2]) == "w")) ? WHITE : BLACK;
+        eColor player_color = ((argc >= 3) && (std::tolower(argv[2][0]) == 'w')) ? WHITE : (std::tolower(argv[2][0]) == 'b') ? BLACK : NUM_COLORS;
         tc_info.movetime = (argc >= 4) ? std::stoll(argv[3]) : 1000;
         std::string fen = (argc >= 5) ? argv[4] : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
         cli_mode(player_color, tc_info, fen);
+    }
+    else if ((argc >= 2) && (std::string(argv[1]) == "-t")) {
+        if (argc != 5) {
+            std::cout << "Test Mode Usage: " << argv[0] << " -t <depth> <expected nodes> <fen>\n";
+            return 1;
+        }
+        int depth = std::stoi(argv[2]);
+        U64 expected_nodes = std::stoull(argv[3]);
+        std::string fen = argv[4];
+        return run_tests(depth, expected_nodes, fen);
     }
     else {
         comp_mode();
