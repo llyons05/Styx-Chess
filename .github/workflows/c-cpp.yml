@@ -47,7 +47,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
-          ./test/perft.sh styx-${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
+          ./test/perft.sh ./engines/styx-${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
         shell: bash
 
       - name: Build Linux project
