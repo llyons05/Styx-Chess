@@ -14,35 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install build deps (Linux) and g++-15
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common wget ca-certificates
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install -y gcc-16 g++-16 build-essential make
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-16
-          sudo update-alternatives --set gcc /usr/bin/gcc-16
-        shell: bash
-
-      - name: Ensure test.sh is executable
-        run: chmod +x ./test/perft.sh
-
-      - name: Run tests
-        run: |
-          set -o pipefail
-          ./test/perft.sh 2>&1 | tee test-output.log
-        shell: bash
-
-  build-linux:
-    needs: run-tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install build deps (Linux) and g++-15
+      - name: Install build deps (Linux) and g++-16
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common wget ca-certificates
@@ -61,14 +33,27 @@ jobs:
           VERSION="${GITHUB_REF_NAME:-dev-${GITHUB_SHA::7}}"
           VERSION="${VERSION//\//-}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Build Linux project
+      
+      - name: Linux Build
         run: |
           set -euo pipefail
           VERSION="${{ steps.artifact_version.outputs.version }}"
-          mkdir -p "build-artifacts/${VERSION}"
           cd src
           make VERSION="${VERSION}"
+
+      - name: Ensure perft.sh is executable
+        run: chmod +x ./test/perft.sh
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          ./test/perft.sh styx-${{ steps.artifact_version.outputs.version }}-linux 2>&1 | tee test-output.log
+        shell: bash
+
+      - name: Build Linux project
+        run: |
+          cd src
+          mkdir -p "build-artifacts/${VERSION}"
           find ../engines -maxdepth 2 -type f -executable -exec cp -p {} "../build-artifacts/${VERSION}/" \;
           ls -R ../build-artifacts
         shell: bash
@@ -129,7 +114,7 @@ jobs:
 
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    needs: [build-linux, build-windows]
+    needs: build-windows
     runs-on: ubuntu-latest
     steps:
       - name: Set artifact version
