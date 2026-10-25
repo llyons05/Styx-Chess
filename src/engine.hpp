@@ -23,12 +23,14 @@ public:
     TimePoint time_limit = 0;
     TimePoint start_time = 0;
 
-    Engine() {}
+    Engine() : tt(DEF_TABLE_SIZE) {}
+    Engine(U64 tt_size) : tt(tt_size) {}
     Engine& operator=(const Engine& other);
 
     Move find_move(Board& board, const Time_Info& tc_info);
     
 private:
+    Transposition_Table tt;
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);

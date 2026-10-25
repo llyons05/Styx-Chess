@@ -11,6 +11,7 @@ Engine& Engine::operator=(const Engine& other) {
         time_limit = other.time_limit;
         start_time = other.start_time;
         best_move = other.best_move;
+        tt = other.tt;
     }
     return *this;
 }
@@ -127,6 +128,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     set_search_cancelled();
     int chosen_move_idx = 0;
     stack->state_info = board.bbs.state_info();
+    eEntry_Type tt_flag = TT_LOWERBOUND;
 
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
         Move& m = root_mg.next_move(i);
@@ -147,12 +149,16 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             best_move = m;
             alpha = val;
             if (alpha >= beta) {
+                tt_flag = TT_UPPERBOUND;
                 break;
             }
+            tt_flag = TT_EXACT;
         }
     }
-    if (!search_cancelled)
+    if (!search_cancelled) {
         assert(alpha > -INF_SCORE);
+        tt.store(board.bbs.hash_key, alpha, depth, stack->ply, tt_flag);
+    }
     root_mg[chosen_move_idx].score = depth*100;
     // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
     return alpha;
@@ -167,6 +173,22 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     bool flag_in_check = in_check(board, board.stm());
     if (flag_in_check) depth++;
 
+    TT_Entry& tt_entry = tt.at(board.bbs.hash_key);
+    if (tt_entry.hash == board.bbs.hash_key) {
+        // std::cerr << "TT HIT\n";
+        if (tt_entry.depth >= depth) {
+            Score tt_eval = tt_entry.root_relative_eval(stack->ply);
+            if (tt_entry.entry_type == TT_EXACT)
+                return tt_eval;
+            if (tt_entry.entry_type == TT_UPPERBOUND)
+                beta = std::min(beta, tt_eval);
+            else
+                alpha = std::max(alpha, tt_eval);
+        }
+        if (alpha >= beta)
+            return alpha;
+    }
+
     if (depth <= 0)
         return q_search(board, stack, alpha, beta);
 
@@ -177,6 +199,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack);
+    eEntry_Type tt_flag = TT_UPPERBOUND;
     int moves_tried = 0;
     for (size_t i = 0; i < mg.movelist.size(); i++) {
         Move& m = mg.next_move(i);
@@ -194,8 +217,10 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         if (val > alpha) {
             alpha = val;
             if (alpha >= beta) {
+                tt_flag = TT_LOWERBOUND;
                 break;
             }
+            tt_flag = TT_EXACT;
         }
     }
     if (moves_tried == 0) {
@@ -203,6 +228,11 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             return -MAX_SCORE + stack->ply;
 		else
             return 0;
+    }
+
+    if (!search_cancelled) {
+        assert(alpha > -INF_SCORE);
+        tt.store(board.bbs.hash_key, alpha, depth, stack->ply, tt_flag);
     }
 
     return alpha;

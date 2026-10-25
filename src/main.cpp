@@ -11,8 +11,9 @@
 #include <vector>
 
 void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
+    std::cout << "ENTERED CLI MODE\n";
     Board board(fen);
-    Engine engine;
+    Engine engine(DEF_TABLE_SIZE);
     board.print();
     std::vector<std::pair<Move, BB_State_Info>> move_history;
 
@@ -130,7 +131,7 @@ void comp_mode() {
 int main(int argc, char* argv[]) {
     if ((argc >= 2) && (std::string(argv[1]) == "-c")) {
         Time_Info tc_info;
-        eColor player_color = ((argc >= 3) && (std::tolower(argv[2][0]) == 'w')) ? WHITE : (std::tolower(argv[2][0]) == 'b') ? BLACK : NUM_COLORS;
+        eColor player_color = ((argc >= 3) && (std::tolower(argv[2][0]) == 'w')) ? WHITE : ((argc >= 3) && (std::tolower(argv[2][0]) == 'b')) ? BLACK : NUM_COLORS;
         tc_info.movetime = (argc >= 4) ? std::stoll(argv[3]) : 1000;
         std::string fen = (argc >= 5) ? argv[4] : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
         cli_mode(player_color, tc_info, fen);

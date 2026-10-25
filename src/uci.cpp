@@ -46,6 +46,7 @@ void UCI_Command::send_command(const std::string& command) {
 void UCI_Command::id(const std::string& name, const std::string& author) {
     send_command("id name " + name);
     send_command("id author " + author);
+    option("Hash", "type spin default 1 min 1 max 128");
 }
 
 void UCI_Command::uciok() {
@@ -77,8 +78,8 @@ void UCI_Command::info(U64 nodes, Depth depth, TimePoint start_time, Score score
     send_command(info_str);
 }
 
-void UCI_Command::option(const std::string& name, const std::string& def) {
-    send_command("option name " + name + " default " + def);
+void UCI_Command::option(const std::string& name, const std::string& opts) {
+    send_command("option name " + name + " " + opts);
 }
 
 void UCI_Command::uci() {
@@ -96,15 +97,18 @@ void UCI_Command::isready() {
 }
 
 void UCI_Command::setoption() {
-    // std::string name;
-    // std::string value;
-    // size_t name_pos = command.find("name");
-    // size_t val_pos = command.find("value");
-    // if (name_pos != std::string::npos)
-    //     sscanf(command.c_str() + name_pos, " name %s", name);
-    // if (val_pos != std::string::npos)
-    //     sscanf(command.c_str() + val_pos, " value %s", value);
-    // Set future options here
+    std::string name, value;
+    size_t name_pos = command.find("name");
+    size_t val_pos = command.find("value");
+    if (name_pos != std::string::npos)
+        std::stringstream(command.substr(name_pos+5)) >> name;
+    if (val_pos != std::string::npos)
+        std::stringstream(command.substr(val_pos+5)) >> value;
+    
+    if (name.empty()) return;
+
+    if ((name == "Hash") && !engine_running)
+        engine = Engine(U64(std::stod(value)* 1000000));
 }
 
 void UCI_Command::ucinewgame() {
