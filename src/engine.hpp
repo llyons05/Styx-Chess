@@ -23,18 +23,20 @@ public:
     TimePoint time_limit = 0;
     TimePoint start_time = 0;
 
-    Engine() {}
+    Engine() : tt(DEF_TABLE_SIZE) {}
+    Engine(U64 tt_size) : tt(tt_size) {}
     Engine& operator=(const Engine& other);
 
     Move find_move(Board& board, const Time_Info& tc_info);
     
 private:
+    Transposition_Table tt;
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
     void init_stack(Search_Stack* stack_base);
-    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack);
+    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
 
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);

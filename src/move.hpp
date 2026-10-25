@@ -5,6 +5,7 @@
 class Move {
 public:
     Score score;
+    U8 id;
 
     eSquare from : 7;
     eSquare to : 7;
@@ -16,6 +17,7 @@ public:
     eSpecialMoveFlags move_flag : 3;
 
     Move() : score(0),
+             id(255),
              from(A1),
              to(A1),
              piece_from(NUM_PIECE_TYPES),
@@ -28,9 +30,11 @@ public:
          ePieceType piece_from,
          ePieceType piece_to,
          ePieceType piece_captured,
-         eSpecialMoveFlags move_flag)
+         eSpecialMoveFlags move_flag,
+         U8 id)
          :
          score(0),
+         id(id),
          from(from),
          to(to),
          piece_from(piece_from),

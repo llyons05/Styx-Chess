@@ -23,7 +23,7 @@ public:
     static void readyok();
     static void bestmove(const Move& move);
     static void info(U64 nodes, Depth depth, TimePoint start_time, Score val);
-    static void option(const std::string& name, const std::string& def);
+    static void option(const std::string& name, const std::string& opts);
 
 private:
     bool engine_running;
