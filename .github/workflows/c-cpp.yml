@@ -53,6 +53,7 @@ jobs:
 
       - name: Build Linux project
         run: |
+          cd src
           mkdir -p "build-artifacts/${VERSION}"
           find ../engines -maxdepth 2 -type f -executable -exec cp -p {} "../build-artifacts/${VERSION}/" \;
           ls -R ../build-artifacts
