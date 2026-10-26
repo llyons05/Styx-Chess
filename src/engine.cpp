@@ -314,7 +314,8 @@ Score Engine::eval(const Board& board) {
     Score center_score = ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
                        + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
-    Score pawn_score = pawn_eval(board);
+    Score midgame_pawn_score = midgame_pawn_eval(board);
+    Score endgame_pawn_score = endgame_pawn_eval(board);
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
@@ -324,8 +325,8 @@ Score Engine::eval(const Board& board) {
     result += white_mat - black_mat;
     result += threat_score + attack_score + knight_score;
 
-    Score midgame_score = center_score;
-    Score endgame_score = pawn_score;
+    Score midgame_score = center_score + midgame_pawn_score;
+    Score endgame_score = endgame_pawn_score;
 
     result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
 
@@ -335,24 +336,52 @@ Score Engine::eval(const Board& board) {
 }
 
 
-Score Engine::pawn_eval(const Board& board) {
+Score Engine::endgame_pawn_eval(const Board& board) {
     Score result = 0;
-    Score development_val = 0;
     BB64 white_pawns = board.bbs[WHITE, PAWN];
     while (white_pawns) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
         if (row >= 4)
-            development_val += row - 3;
+            result += row - 3;
     }
     BB64 black_pawns = board.bbs[BLACK, PAWN];
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
         if (row <= 3)
-            development_val -= 4 - row;
+            result -= 4 - row;
     }
 
-    result += development_val*5;
+    return result*5;
+}
+
+
+Score Engine::midgame_pawn_eval(const Board& board) {
+    Score result = 0;
+    BB64 white_pawns = board.bbs[WHITE, PAWN];
+    BB64 black_pawns = board.bbs[BLACK, PAWN];
+    U8 white_king_file = square_col(board.bbs.king_sq(WHITE));
+    U8 black_king_file = square_col(board.bbs.king_sq(BLACK));
+    if (square_row(board.bbs.king_sq(WHITE)) == 0) {
+        if (white_king_file > FILE_F) {
+            result += (white_pawns & (BB64(F2) | G2 | H2)).bitcount() * 8;
+            result += (white_pawns & (BB64(F3) | G3 | H3)).bitcount() * 4;
+        }
+        else if (white_king_file < FILE_D) {
+            result += (white_pawns & (BB64(A2) | B2 | C2)).bitcount() * 8;
+            result += (white_pawns & (BB64(A3) | B3 | C3)).bitcount() * 4;
+        }
+    }
+    if (square_row(board.bbs.king_sq(BLACK)) == 7) {
+        if (black_king_file > FILE_F) {
+            result -= (black_pawns & (BB64(F7) | G7 | H7)).bitcount() * 8;
+            result -= (black_pawns & (BB64(F6) | G6 | H6)).bitcount() * 4;
+        }
+        else if (black_king_file < FILE_D) {
+            result -= (black_pawns & (BB64(A7) | B7 | C7)).bitcount() * 8;
+            result -= (black_pawns & (BB64(A6) | B6 | C6)).bitcount() * 4;
+        }
+    }
     return result;
 }

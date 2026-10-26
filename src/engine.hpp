@@ -48,7 +48,8 @@ private:
     void undo_move(Board& board, Search_Stack* stack, const Move& move);
     
     Score eval(const Board& board);
-    Score pawn_eval(const Board& board);
+    Score endgame_pawn_eval(const Board& board);
+    Score midgame_pawn_eval(const Board& board);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
