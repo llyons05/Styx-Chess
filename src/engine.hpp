@@ -48,7 +48,8 @@ private:
     void undo_move(Board& board, Search_Stack* stack, const Move& move);
     
     Score eval(const Board& board);
-    Score pawn_eval(const Board& board);
+    Score endgame_pawn_eval(const Board& board);
+    Score midgame_pawn_eval(const Board& board);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
@@ -60,11 +61,11 @@ private:
     }
 };
 
-constexpr BB64 big_center = C3 | D3 | E3 | F3
+constexpr BB64 big_center = BB64(C3) | D3 | E3 | F3
                           | C4 | D4 | E4 | F4
                           | C5 | D5 | E5 | F5
                           | C6 | D6 | E6 | F6;
 
-constexpr BB64 small_center = D4 | E4 | D5 | E5;
+constexpr BB64 small_center = BB64(D4) | E4 | D5 | E5;
 
 constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_H] | COLS[0] | COLS[7];
