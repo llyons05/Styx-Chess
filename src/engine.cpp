@@ -80,7 +80,7 @@ Score Engine::search_iterate(Board& board) {
     Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
     UCI_Command::info(nodes_traversed, 1, start_time, final_val);
 
-    while (!search_cancelled && (current_depth < MAX_PLY)) {
+    while (((abs(final_val) < MIN_WINNING_SCORE) || (current_depth <= 3)) && !search_cancelled && (current_depth < MAX_PLY)) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
         if (!search_cancelled)
             final_val = temp_val;
