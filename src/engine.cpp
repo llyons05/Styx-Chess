@@ -319,8 +319,8 @@ Score Engine::eval(const Board& board) {
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
-    Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 5;
-    Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 10;
+    Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 4;
+    Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 8;
 
     result += white_mat - black_mat;
     result += threat_score + attack_score + knight_score;
