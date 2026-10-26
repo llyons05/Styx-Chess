@@ -271,7 +271,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!m.is_capture()) {
+        if (!m.is_capture() && !m.is_promo()) {
             undo_move(board, stack, m);
             continue;
         }
