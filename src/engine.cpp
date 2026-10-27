@@ -316,6 +316,7 @@ Score Engine::eval(const Board& board) {
 
     Score midgame_pawn_score = midgame_pawn_eval(board);
     Score endgame_pawn_score = endgame_pawn_eval(board);
+    Score king_safety_score = (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
 
     BB64 white_attacks = Move_Generator::attacks(board, WHITE);
     BB64 black_attacks = Move_Generator::attacks(board, BLACK);
@@ -325,7 +326,7 @@ Score Engine::eval(const Board& board) {
     result += white_mat - black_mat;
     result += threat_score + attack_score + knight_score;
 
-    Score midgame_score = center_score + midgame_pawn_score;
+    Score midgame_score = center_score + midgame_pawn_score + king_safety_score;
     Score endgame_score = endgame_pawn_score;
 
     result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
