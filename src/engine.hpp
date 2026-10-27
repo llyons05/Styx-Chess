@@ -69,3 +69,14 @@ constexpr BB64 big_center = BB64(C3) | D3 | E3 | F3
 constexpr BB64 small_center = BB64(D4) | E4 | D5 | E5;
 
 constexpr BB64 edges = ROWS[FILE_A] | ROWS[FILE_H] | COLS[0] | COLS[7];
+
+constexpr Score king_safety_table[64] {
+     8,  8,  5,  2,  2,  5,  8,  8,
+     4,  3,  0,  0,  0,  0,  3,  4,
+     0,  0, -3, -3, -3, -3,  0,  0,
+    -3, -5, -5, -5, -5, -5, -5, -3,
+    -5, -5, -6, -7, -7, -6, -5, -5,
+    -7, -7, -7, -7, -7, -7, -7, -7,
+    -8, -8, -8, -8, -8, -8, -8, -8,
+    -8, -8, -8, -8, -8, -8, -8, -8,
+};
