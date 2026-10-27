@@ -23,7 +23,6 @@ public:
     TimePoint time_limit = 0;
     TimePoint start_time = 0;
 
-    Engine() : tt(DEF_TABLE_SIZE) {}
     Engine(U64 tt_size) : tt(tt_size) {}
     Engine& operator=(const Engine& other);
 

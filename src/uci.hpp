@@ -5,8 +5,14 @@
 
 #include <string>
 
+struct UCI_Options {
+    U64 hash_size = DEF_TABLE_SIZE;
+    // There will be others here someday
+} extern uci_options;
+
 class UCI_Command {
 public:
+
     std::string command;
     Board& board;
     Engine& engine;
@@ -14,6 +20,7 @@ public:
     bool engine_stop;
     bool engine_quit;
     Time_Info tc_info;
+    UCI_Options uci_options;
 
     UCI_Command(const std::string& command, Board& board, Engine& engine, bool engine_running);
 
