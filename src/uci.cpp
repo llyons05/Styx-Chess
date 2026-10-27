@@ -6,6 +6,8 @@
 #include <string_view>
 #include <syncstream>
 
+UCI_Options uci_options;
+
 UCI_Command::UCI_Command(const std::string& command, Board& board, Engine& engine, bool engine_running) 
 :   command(command),
     board(board),
@@ -107,13 +109,15 @@ void UCI_Command::setoption() {
     
     if (name.empty()) return;
 
-    if ((name == "Hash") && !engine_running)
-        engine = Engine(U64(std::stod(value)* 1000000));
+    if ((name == "Hash") && !engine_running) {
+        uci_options.hash_size = U64(std::stoull(value)* 1000000);
+        engine = Engine(uci_options.hash_size);
+    }
 }
 
 void UCI_Command::ucinewgame() {
     board = Board();
-    engine = Engine();
+    engine = Engine(uci_options.hash_size);
 }
 
 void UCI_Command::position() {

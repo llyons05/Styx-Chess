@@ -106,7 +106,7 @@ int engine_go(Board& board, Engine& engine, const Time_Info& tc_info) {
 
 void comp_mode() {
     Board board;
-    Engine engine;
+    Engine engine(DEF_TABLE_SIZE);
     std::future<int> engine_future;
     while (true) {
         std::string line;
