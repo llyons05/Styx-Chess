@@ -42,6 +42,10 @@ public:
          piece_captured(piece_captured),
          move_flag(move_flag) {}
 
+    static constexpr Move null() {
+        return Move(A1, A1, NUM_PIECE_TYPES, NUM_PIECE_TYPES, NUM_PIECE_TYPES, MFLAG_NULLMOVE, 255);
+    }
+
     inline bool is_capture() const {
         return piece_captured != NUM_PIECE_TYPES;
     }
@@ -67,7 +71,7 @@ public:
     }
 
     inline bool is_valid() const {
-        return from != to;
+        return (from != to) || is_nullmove();
     }
 
     inline int exchange_val() const {
