@@ -195,7 +195,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         return 0;
     }
 
-    TT_Entry& tt_entry = tt.at(board.bbs.hash_key);
+    TT_Entry& tt_entry = tt.entry(board.bbs.hash_key);
     U8 tt_move_id = 255;
     if (tt_entry.hash == board.bbs.hash_key) {
         // std::cerr << "TT HIT\n";

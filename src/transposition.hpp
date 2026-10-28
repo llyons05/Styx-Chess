@@ -82,14 +82,49 @@ public:
 };
 
 
+class TT_Entry_Bucket {
+public:
+    TT_Entry entries[2]{};
+    TT_Entry_Bucket() {}
+
+    inline void store(U64 hash, Score eval, Depth depth, int ply, U8 best_move_id, eEntry_Type entry_type) {
+        TT_Entry& replaced_entry = entries[0];
+        if (depth <= replaced_entry.depth) {
+            if (hash == replaced_entry.hash)
+                return;
+            replaced_entry = entries[1];
+        }
+        if ((hash == replaced_entry.hash) && (depth <= replaced_entry.depth))
+            return;
+        
+        if (abs(eval) >= MIN_WINNING_SCORE) {
+            if (eval > 0) eval += ply;
+            else          eval -= ply;
+        }
+
+        replaced_entry.update(hash, eval, depth, best_move_id, entry_type);
+    }
+
+    constexpr bool contains(U64 hash) const {
+        return (entries[0].hash == hash) || (entries[1].hash == hash);
+    }
+
+    constexpr TT_Entry& entry(U64 hash) {
+        if (entries[0].hash == hash)
+            return entries[0];
+        return entries[1];
+    }
+};
+
+
 class Transposition_Table {
 public:
     U64 size;
-    std::shared_ptr<TT_Entry[]> table;
+    std::shared_ptr<TT_Entry_Bucket[]> table;
 
     Transposition_Table(U64 bytes) :
-        size((bytes / sizeof(TT_Entry)) - 1),
-        table(std::make_unique<TT_Entry[]>(size)) {}
+        size((bytes / sizeof(TT_Entry_Bucket)) - 1),
+        table(std::make_unique<TT_Entry_Bucket[]>(size)) {}
 
     Transposition_Table& operator=(const Transposition_Table& other) {
         if (this != &other) {
@@ -99,24 +134,20 @@ public:
         return *this;
     }
     
-    constexpr TT_Entry& at(U64 hash) {
+    constexpr TT_Entry_Bucket& at(U64 hash) {
         return table.get()[hash % size];
     }
 
+    constexpr TT_Entry& entry(U64 hash) {
+        return at(hash).entry(hash);
+    }
+
     constexpr bool contains(U64 hash) {
-        return at(hash).hash == hash;
+        return at(hash).contains(hash);
     }
 
     inline void store(U64 hash, Score eval, Depth depth, int ply, U8 best_move_id, eEntry_Type entry_type) {
-        TT_Entry& entry = at(hash);
-        if ((entry.hash == hash) && (entry.depth > depth))
-            return;
-        
-        if (abs(eval) >= MIN_WINNING_SCORE) {
-            if (eval > 0) eval += ply;
-            else          eval -= ply;
-        }
-
-        entry.update(hash, eval, depth, best_move_id, entry_type);
+        TT_Entry_Bucket& bucket = at(hash);
+        bucket.store(hash, eval, depth, ply, best_move_id, entry_type);
     }
 };
