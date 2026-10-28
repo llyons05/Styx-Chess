@@ -125,6 +125,11 @@ bool Bitboards::has_mating_material(eColor color) const {
 }
 
 Piece Bitboards::handle_move(const Move& move) {
+    if (move.is_nullmove()) {
+        change_turn();
+        return Piece();
+    }
+
     hash_key ^= zobrist.ep(ep_square);
     ep_square = NULL_SQUARE;
     pickup_piece(move.from);
@@ -163,6 +168,11 @@ Piece Bitboards::handle_move(const Move& move) {
 
 
 void Bitboards::undo_move(const Move& move, const BB_State_Info& state_info) {
+    if (move.is_nullmove()) {
+        change_turn();
+        return;
+    }
+    
     change_turn();
     fifty_move_rule = state_info.fifty_move_rule;
 
