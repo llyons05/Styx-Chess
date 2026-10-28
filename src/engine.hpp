@@ -30,12 +30,14 @@ public:
     
 private:
     Transposition_Table tt;
+    Move killer_moves[MAX_PLY+1][2]{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
     void init_stack(Search_Stack* stack_base);
     void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
+    void set_killers(const Move& move, Search_Stack* stack);
 
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
@@ -79,3 +81,8 @@ constexpr Score king_safety_table[64] {
     -8, -8, -8, -8, -8, -8, -8, -8,
     -8, -8, -8, -8, -8, -8, -8, -8,
 };
+
+constexpr int TT_ORDERING_VAL       = 100000;
+constexpr int ROOT_ORDERING_VAL     = 100000;
+constexpr int CAPTURE_ORDERING_VAL  = 2000;
+constexpr int KILLER_ORDERING_VAL   = 1000;
