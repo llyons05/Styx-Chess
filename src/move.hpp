@@ -46,6 +46,10 @@ public:
         return Move(A1, A1, NUM_PIECE_TYPES, NUM_PIECE_TYPES, NUM_PIECE_TYPES, MFLAG_NULLMOVE, 255);
     }
 
+    constexpr bool operator==(const Move& other) const {
+        return (from == other.from) && (to == other.to);
+    }
+
     inline bool is_capture() const {
         return piece_captured != NUM_PIECE_TYPES;
     }

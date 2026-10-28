@@ -51,9 +51,25 @@ void Engine::init_stack(Search_Stack* stack_base) {
 void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
-        move.score += move.is_capture() * (1 + move.piece_captured + std::max(0, move.piece_captured - move.piece_from));
+        move.score += move.is_capture() * (CAPTURE_ORDERING_VAL + move.piece_captured + std::max(0, move.piece_captured - move.piece_from));
+
         if (move.id == tt_move_id)
-            move.score = 100000;
+            move.score = TT_ORDERING_VAL;
+
+        if (move.score < KILLER_ORDERING_VAL) {
+            if (move == killer_moves[stack->ply][0])
+                move.score = KILLER_ORDERING_VAL;
+            else if (move == killer_moves[stack->ply][1])
+                move.score = KILLER_ORDERING_VAL - 1;
+        }
+    }
+}
+
+void Engine::set_killers(const Move& move, Search_Stack* stack) {
+    if (!move.is_capture() && !move.is_promo()) {
+        if (move != killer_moves[stack->ply][0])
+            killer_moves[stack->ply][1] = killer_moves[stack->ply][0];
+        killer_moves[stack->ply][0] = move;
     }
 }
 
@@ -161,7 +177,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
         assert(alpha > -INF_SCORE);
         tt.store(board.bbs.hash_key, alpha, depth, stack->ply, best_move.id, tt_flag);
     }
-    root_mg[chosen_move_idx].score = depth*100;
+    root_mg[chosen_move_idx].score = depth*ROOT_ORDERING_VAL;
     // std::cout << "Best move chosen at depth " << depth << " " << best_move << "\n";
     return alpha;
 }
@@ -240,6 +256,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             best_move_id = m.id;
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
+                set_killers(m, stack);
                 break;
             }
             tt_flag = TT_EXACT;
