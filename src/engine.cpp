@@ -257,6 +257,12 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if ((depth <= 0) || (stack->ply >= MAX_PLY))
         return q_search(board, stack, alpha, beta);
 
+    // Mate distance pruning
+    Score mate_score = MAX_SCORE - stack->ply;
+    if (alpha < -mate_score) alpha = -mate_score;
+    if (beta > mate_score - 1) beta = mate_score - 1;
+    if (alpha >= beta) return alpha;
+
     // Null Move pruning
     if (!flag_in_check
      && (depth > 2)
@@ -280,7 +286,8 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
      && (abs(alpha) < MIN_WINNING_SCORE)
      && (eval(board, stack) + 200*depth <= alpha))
         futility_prune = true;
-        
+
+    stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack, tt_move_id);
     eEntry_Type tt_flag = TT_UPPERBOUND;
