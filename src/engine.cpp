@@ -231,6 +231,14 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             return beta;
         }
     }
+
+    // Futility Pruning
+    bool futility_prune = false;
+    if (!flag_in_check
+     && (depth <= 3)
+     && (abs(alpha) < MIN_WINNING_SCORE)
+     && (eval(board) + 200*depth <= alpha))
+        futility_prune = true;
         
     stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
@@ -244,6 +252,16 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             undo_move(board, stack, m);
             continue;
         }
+
+        if (futility_prune
+         && moves_tried
+         && !m.is_capture()
+         && !m.is_promo()
+         && !in_check(board, board.stm())) {
+            undo_move(board, stack, m);
+            continue;
+        }
+
         moves_tried++;
         Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
         undo_move(board, stack, m);
