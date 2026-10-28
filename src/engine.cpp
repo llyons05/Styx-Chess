@@ -215,7 +215,12 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             return beta;
         }
     }
-        
+    
+    Score mate_score = MAX_SCORE - stack->ply;
+    if (alpha < -mate_score) alpha = -mate_score;
+    if (beta > mate_score - 1) beta = mate_score - 1;
+    if (alpha >= beta) return alpha;
+
     stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack, tt_move_id);
