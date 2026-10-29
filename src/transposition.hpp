@@ -89,7 +89,7 @@ public:
     std::unique_ptr<TT_Entry[]> table;
 
     Transposition_Table(U64 bytes) :
-        size(std::max(1ULL, (bytes / sizeof(TT_Entry)) - 1)),
+        size(std::max<U64>(1, bytes / sizeof(TT_Entry))),
         used(0),
         table(std::make_unique<TT_Entry[]>(size)) {}
 
