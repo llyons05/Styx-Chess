@@ -225,10 +225,7 @@ public:
         return piece_bbs[color][piece];
     }
 
-    eSquare king_sq(eColor color) const {
-        assert(color < NUM_COLORS);
-        return piece_bbs[color][KING].lsb();
-    }
+    eSquare king_sq(eColor color) const;
 
 private:
     inline Piece pickup_piece(eSquare square);
