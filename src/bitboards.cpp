@@ -291,11 +291,9 @@ void Bitboards::update_castling_rights(const Move& m) {
 }
 
 void Bitboards::update_ep_square(const Move& m) {
-    // In the future check if en passant is possible before setting it
-    if (stm == WHITE)
-        ep_square = eSquare(m.from + 8);
-    else
-        ep_square = eSquare(m.from - 8);
+    BB64 can_ep = BB64(m.to).shift<EAST>() | BB64(m.to).shift<WEST>();
+    if (!(piece_bbs[!stm][PAWN] & can_ep).empty())
+        ep_square = eSquare((m.to + m.from)/2);
     
     hash_key ^= zobrist.ep(ep_square);
 }
