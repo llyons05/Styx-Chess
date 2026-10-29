@@ -79,7 +79,7 @@ public:
     }
 
     inline int exchange_val() const {
-        return is_capture() ? piece_captured - piece_from : 0;
+        return is_capture() ? static_cast<int>(piece_captured) - piece_from : 0;
     }
 
     std::string long_alg() const {
