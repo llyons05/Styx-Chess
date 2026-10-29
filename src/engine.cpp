@@ -203,6 +203,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
 }
 
 Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth) {
+    assert(stack->ply <= MAX_PLY);
     nodes_traversed++;
     set_search_cancelled();
     if (search_cancelled)
@@ -234,7 +235,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             return alpha;
     }
 
-    if (depth <= 0)
+    if ((depth <= 0) || (stack->ply >= MAX_PLY))
         return q_search(board, stack, alpha, beta);
 
     // Null Move pruning
@@ -318,12 +319,15 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
 
 Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score beta) {
+    assert(stack->ply <= MAX_PLY);
     nodes_traversed++;
     set_search_cancelled();
     if (search_cancelled)
         return 0;
 
     Score static_eval = eval(board, stack);
+    if (stack->ply >= MAX_PLY)
+        return static_eval;
 
     if (static_eval >= beta)
         return beta;
