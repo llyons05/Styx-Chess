@@ -84,5 +84,6 @@ constexpr Score king_safety_table[64] {
 
 constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
-constexpr int CAPTURE_ORDERING_VAL  = 2000;
+constexpr int PROMO_ORDERING_VAL    = 5000;
+constexpr int CAPTURE_ORDERING_VAL  = 3000;
 constexpr int KILLER_ORDERING_VAL   = 1000;

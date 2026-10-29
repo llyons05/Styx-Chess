@@ -54,9 +54,13 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
         if (move.is_capture()) {
-            move.score = sorting_vals[move.piece_captured] - move.piece_from;
+            move.score = CAPTURE_ORDERING_VAL/2 + sorting_vals[move.piece_captured] - move.piece_from;
             if ((sorting_vals[move.piece_from] <= sorting_vals[move.piece_captured]) || (opp_threats & move.to).empty())
-                move.score += CAPTURE_ORDERING_VAL;
+                move.score += CAPTURE_ORDERING_VAL/2;
+        }
+
+        if (move.is_promo()) {
+            move.score += PROMO_ORDERING_VAL + move.piece_to;
         }
 
         if (move.id == tt_move_id)
