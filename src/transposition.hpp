@@ -85,18 +85,29 @@ public:
 class Transposition_Table {
 public:
     U64 size;
-    std::shared_ptr<TT_Entry[]> table;
+    U64 used;
+    std::unique_ptr<TT_Entry[]> table;
 
     Transposition_Table(U64 bytes) :
-        size((bytes / sizeof(TT_Entry)) - 1),
+        size(std::max(1ULL, (bytes / sizeof(TT_Entry)) - 1)),
+        used(0),
         table(std::make_unique<TT_Entry[]>(size)) {}
 
-    Transposition_Table& operator=(const Transposition_Table& other) {
+    Transposition_Table& operator=(Transposition_Table& other) {
         if (this != &other) {
             size = other.size;
             table = std::move(other.table);
         }
         return *this;
+    }
+
+    constexpr void clear() {
+        std::fill_n(table.get(), size, TT_Entry{});
+        used = 0;
+    }
+
+    constexpr U64 hashfull() {
+        return (used*1000) / size;
     }
     
     constexpr TT_Entry& at(U64 hash) {
@@ -116,7 +127,7 @@ public:
             if (eval > 0) eval += ply;
             else          eval -= ply;
         }
-
+        if (entry.depth == -1) used++;
         entry.update(hash, eval, depth, best_move_id, entry_type);
     }
 };
