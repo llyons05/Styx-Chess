@@ -43,15 +43,33 @@ TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
     return tc_info.movetime;
 }
 
-void Engine::init_stack(Search_Stack* stack_base) {
+void Engine::init_stack(const Board& board, Search_Stack* stack_base) {
     for (int i = 0; i <= MAX_PLY; i++)
         stack_base[i].ply = i;
+    stack_base[0].state_info = board.bbs.state_info();
+    stack_base[0].threats[WHITE] = Move_Generator::attacks(board, WHITE);
+    stack_base[0].threats[BLACK] = Move_Generator::attacks(board, BLACK);
+}
+
+void Engine::update_stack(const Board& board, Search_Stack* stack) {
+    stack->threats[!board.stm()] = Move_Generator::attacks(board, !board.stm());
+    stack->state_info = board.bbs.state_info();
 }
 
 void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
+    constexpr int sorting_vals[NUM_PIECE_TYPES+1] = {mat_val(PAWN), mat_val(BISHOP), mat_val(KNIGHT), mat_val(ROOK), mat_val(QUEEN), mat_val(QUEEN)+1, 0};
+    BB64 opp_threats = stack->threats[!board.stm()];
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
-        move.score += move.is_capture() * (CAPTURE_ORDERING_VAL + move.piece_captured + std::max(0, move.piece_captured - move.piece_from));
+        if (move.is_capture()) {
+            move.score = CAPTURE_ORDERING_VAL/2 + sorting_vals[move.piece_captured] - move.piece_from;
+            if ((sorting_vals[move.piece_from] <= sorting_vals[move.piece_captured]) || (opp_threats & move.to).empty())
+                move.score += CAPTURE_ORDERING_VAL/2;
+        }
+
+        if (move.is_promo()) {
+            move.score += PROMO_ORDERING_VAL + move.piece_to;
+        }
 
         if (move.id == tt_move_id)
             move.score = TT_ORDERING_VAL;
@@ -77,8 +95,9 @@ void Engine::set_killers(const Move& move, Search_Stack* stack) {
 bool Engine::do_move(Board& board, Search_Stack* stack, const Move& move) {
     board.move(move);
     stack->current_move = move;
+    (stack+1)->threats[board.stm()] = Move_Generator::attacks(board, board.stm());
 
-    return !in_check(board, !board.stm());
+    return !in_check(board, !board.stm(), stack+1);
 }
 
 
@@ -88,7 +107,7 @@ void Engine::undo_move(Board& board, Search_Stack* stack, const Move& move) {
 
 Score Engine::search_iterate(Board& board) {
     Search_Stack stack[MAX_PLY + 1] {};
-    init_stack(stack);
+    init_stack(board, stack);
     Move_Generator root_mg(board);
     set_movescores(board, root_mg, stack, 255);
 
@@ -145,7 +164,6 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     nodes_traversed++;
     set_search_cancelled();
     int chosen_move_idx = 0;
-    stack->state_info = board.bbs.state_info();
     eEntry_Type tt_flag = TT_LOWERBOUND;
 
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
@@ -156,12 +174,14 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
             m.score = -INF_SCORE;
             continue;
         }
+        update_stack(board, stack+1);
         Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
         undo_move(board, stack, m);
 
         if (search_cancelled)
             break;
 
+        // std::cout << "\tScore: " << val << "\n";
         if (val > alpha) {
             chosen_move_idx = i;
             best_move = m;
@@ -188,7 +208,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (search_cancelled)
         return 0;
     
-    bool flag_in_check = in_check(board, board.stm());
+    bool flag_in_check = in_check(board, board.stm(), stack);
     if (flag_in_check) depth++;
 
     if (board.is_draw()) {
@@ -222,9 +242,10 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
      && (depth > 2)
      && !(stack-1)->current_move.is_nullmove()
      && (board.bbs.piece_counts[board.stm()][PAWN]*mat_val(PAWN) < board.bbs.material[board.stm()])
-     && (eval(board) >= beta)) {
+     && (eval(board, stack) >= beta)) {
         Depth reduction = (depth > 5) ? 3 : 2;
         do_move(board, stack, Move::null());
+        update_stack(board, stack+1);
         Score null_score = -search(board, stack+1, -beta, -(beta - 1), depth-reduction);
         undo_move(board, stack, Move::null());
         if (null_score >= beta) {
@@ -237,10 +258,9 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (!flag_in_check
      && (depth <= 3)
      && (abs(alpha) < MIN_WINNING_SCORE)
-     && (eval(board) + 200*depth <= alpha))
+     && (eval(board, stack) + 200*depth <= alpha))
         futility_prune = true;
         
-    stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack, tt_move_id);
     eEntry_Type tt_flag = TT_UPPERBOUND;
@@ -252,12 +272,13 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             undo_move(board, stack, m);
             continue;
         }
+        update_stack(board, stack+1);
 
         if (futility_prune
          && moves_tried
          && !m.is_capture()
          && !m.is_promo()
-         && !in_check(board, board.stm())) {
+         && !in_check(board, board.stm(), stack+1)) {
             undo_move(board, stack, m);
             continue;
         }
@@ -302,14 +323,13 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     if (search_cancelled)
         return 0;
 
-    Score static_eval = eval(board);
+    Score static_eval = eval(board, stack);
 
     if (static_eval >= beta)
         return beta;
     if (static_eval > alpha)
         alpha = static_eval;
     
-    stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack, 255);
 
@@ -325,6 +345,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             undo_move(board, stack, m);
             continue;
         }
+        update_stack(board, stack+1);
         Score val = -q_search(board, stack+1, -beta, -alpha);
         undo_move(board, stack, m);
         
@@ -339,7 +360,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     }
 
     if (legal_moves == 0) {
-        if (in_check(board, board.stm()))
+        if (in_check(board, board.stm(), stack))
             return -MAX_SCORE + stack->ply;
 		else
             return 0;
@@ -348,7 +369,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     return alpha;
 }
 
-Score Engine::eval(const Board& board) {
+Score Engine::eval(const Board& board, Search_Stack* stack) {
     Score result = 0;
     int game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
                    + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
@@ -368,8 +389,8 @@ Score Engine::eval(const Board& board) {
     Score endgame_pawn_score = endgame_pawn_eval(board);
     Score king_safety_score = (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
 
-    BB64 white_attacks = Move_Generator::attacks(board, WHITE);
-    BB64 black_attacks = Move_Generator::attacks(board, BLACK);
+    BB64 white_attacks = stack->threats[WHITE] & ~board.bbs[WHITE];
+    BB64 black_attacks = stack->threats[BLACK] & ~board.bbs[BLACK];
     Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 4;
     Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 8;
 

@@ -70,8 +70,7 @@ inline eColor operator++(eColor& color, int) {
 constexpr eColor operator!(eColor color) {
     switch (color) {
         case WHITE: return BLACK;
-        case BLACK: return WHITE;
-        default: return NUM_COLORS;
+        default: return WHITE;
     }
 }
 

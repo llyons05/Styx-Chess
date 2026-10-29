@@ -13,6 +13,8 @@ struct Search_Stack {
     Depth reduction = 0;
     Move current_move = Move();
     BB_State_Info state_info;
+
+    BB64 threats[NUM_COLORS]{};
 };
 
 class Engine {
@@ -35,7 +37,8 @@ private:
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
-    void init_stack(Search_Stack* stack_base);
+    void init_stack(const Board& board, Search_Stack* stack_base);
+    void update_stack(const Board& board, Search_Stack* stack);
     void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
     void set_killers(const Move& move, Search_Stack* stack);
 
@@ -48,7 +51,7 @@ private:
     bool do_move(Board& board, Search_Stack* stack, const Move& move);
     void undo_move(Board& board, Search_Stack* stack, const Move& move);
     
-    Score eval(const Board& board);
+    Score eval(const Board& board, Search_Stack* stack);
     Score endgame_pawn_eval(const Board& board);
     Score midgame_pawn_eval(const Board& board);
 
@@ -57,8 +60,8 @@ private:
             search_cancelled = (get_time() - start_time > time_limit) || external_cancel.load(std::memory_order::relaxed);
     }
 
-    inline bool in_check(const Board& board, eColor c) {
-        return Move_Generator::is_attacked(board, !c, board.bbs.king_sq(c));
+    inline bool in_check(const Board& board, eColor c, Search_Stack* stack) {
+        return !(stack->threats[!c] & board.bbs.king_sq(c)).empty();
     }
 };
 
@@ -84,5 +87,6 @@ constexpr Score king_safety_table[64] {
 
 constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
-constexpr int CAPTURE_ORDERING_VAL  = 2000;
+constexpr int PROMO_ORDERING_VAL    = 5000;
+constexpr int CAPTURE_ORDERING_VAL  = 3000;
 constexpr int KILLER_ORDERING_VAL   = 1000;

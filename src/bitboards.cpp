@@ -302,3 +302,8 @@ void Bitboards::change_turn() {
     stm = !stm;
     hash_key ^= zobrist.color();
 }
+
+eSquare Bitboards::king_sq(eColor color) const {
+    assert(color < NUM_COLORS);
+    return piece_bbs[color][KING].lsb();
+}
