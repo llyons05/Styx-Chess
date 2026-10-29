@@ -64,7 +64,7 @@ private:
     void gen_king_moves();
 
     template<Direction D>
-    static BB64 valid_sliding_moves(BB64 pieces, const Board& board, eColor color);
+    static BB64 sliding_threats(BB64 pieces, const Board& board, eColor color);
 
     template <eColor C>
     static BB64 pawn_attacks(const Board& board);

@@ -49,9 +49,15 @@ void Engine::init_stack(Search_Stack* stack_base) {
 }
 
 void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
+    constexpr int sorting_vals[NUM_PIECE_TYPES+1] = {mat_val(PAWN), mat_val(BISHOP), mat_val(KNIGHT), mat_val(ROOK), mat_val(QUEEN), mat_val(QUEEN)+1, 0};
+    BB64 opp_threats = Move_Generator::attacks(board, !board.stm());
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
-        move.score += move.is_capture() * (CAPTURE_ORDERING_VAL + move.piece_captured + std::max(0, move.piece_captured - move.piece_from));
+        if (move.is_capture()) {
+            move.score = sorting_vals[move.piece_captured] - move.piece_from;
+            if ((sorting_vals[move.piece_from] <= sorting_vals[move.piece_captured]) || (opp_threats & move.to).empty())
+                move.score += CAPTURE_ORDERING_VAL;
+        }
 
         if (move.id == tt_move_id)
             move.score = TT_ORDERING_VAL;
@@ -368,8 +374,8 @@ Score Engine::eval(const Board& board) {
     Score endgame_pawn_score = endgame_pawn_eval(board);
     Score king_safety_score = (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
 
-    BB64 white_attacks = Move_Generator::attacks(board, WHITE);
-    BB64 black_attacks = Move_Generator::attacks(board, BLACK);
+    BB64 white_attacks = Move_Generator::attacks(board, WHITE) & ~board.bbs[WHITE];
+    BB64 black_attacks = Move_Generator::attacks(board, BLACK) & ~board.bbs[BLACK];
     Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 4;
     Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 8;
 

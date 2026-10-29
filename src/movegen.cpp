@@ -28,12 +28,13 @@ void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSq
 }
 
 template<Direction D>
-BB64 Move_Generator::valid_sliding_moves(BB64 pieces, const Board& board, eColor attackers) {
+BB64 Move_Generator::sliding_threats(BB64 pieces, const Board& board, eColor attackers) {
     BB64 valid_moves = 0;
-    BB64 next = pieces.shift<D>() & ~board.bbs[attackers];
+    BB64 all = board.bbs.all();
+    BB64 next = pieces.shift<D>();
     while (!next.empty()) {
         valid_moves |= next;
-        next = (next & ~board.bbs[!attackers]).shift<D>() & ~board.bbs[attackers];
+        next = (next & ~all).shift<D>();
     }
     return valid_moves;
 }
@@ -74,11 +75,11 @@ void Move_Generator::gen_bishop_moves() {
     while (!bishops.empty()) {
         eSquare s = bishops.pop();
         BB64 valid_moves = 0;
-        valid_moves |= valid_sliding_moves<NORTHEAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTHEAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTHWEST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<NORTHWEST>(s, board, board.stm());
-        write_moves(BISHOP, BISHOP, s, valid_moves, MFLAG_NORMAL);
+        valid_moves |= sliding_threats<NORTHEAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTHEAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTHWEST>(s, board, board.stm());
+        valid_moves |= sliding_threats<NORTHWEST>(s, board, board.stm());
+        write_moves(BISHOP, BISHOP, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
 
@@ -96,11 +97,11 @@ void Move_Generator::gen_rook_moves() {
     while (!rooks.empty()) {
         eSquare s = rooks.pop();
         BB64 valid_moves = 0;
-        valid_moves |= valid_sliding_moves<NORTH>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<EAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTH>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<WEST>(s, board, board.stm());
-        write_moves(ROOK, ROOK, s, valid_moves, MFLAG_NORMAL);
+        valid_moves |= sliding_threats<NORTH>(s, board, board.stm());
+        valid_moves |= sliding_threats<EAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTH>(s, board, board.stm());
+        valid_moves |= sliding_threats<WEST>(s, board, board.stm());
+        write_moves(ROOK, ROOK, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
 
@@ -109,15 +110,15 @@ void Move_Generator::gen_queen_moves() {
     while (!queens.empty()) {
         eSquare s = queens.pop();
         BB64 valid_moves = 0;
-        valid_moves |= valid_sliding_moves<NORTH>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<EAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTH>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<WEST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<NORTHEAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTHEAST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<SOUTHWEST>(s, board, board.stm());
-        valid_moves |= valid_sliding_moves<NORTHWEST>(s, board, board.stm());
-        write_moves(QUEEN, QUEEN, s, valid_moves, MFLAG_NORMAL);
+        valid_moves |= sliding_threats<NORTH>(s, board, board.stm());
+        valid_moves |= sliding_threats<EAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTH>(s, board, board.stm());
+        valid_moves |= sliding_threats<WEST>(s, board, board.stm());
+        valid_moves |= sliding_threats<NORTHEAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTHEAST>(s, board, board.stm());
+        valid_moves |= sliding_threats<SOUTHWEST>(s, board, board.stm());
+        valid_moves |= sliding_threats<NORTHWEST>(s, board, board.stm());
+        write_moves(QUEEN, QUEEN, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
 
@@ -153,22 +154,22 @@ BB64 Move_Generator::attacks(const Board& board, eColor attackers) {
 
     BB64 knights = board.bbs[attackers, KNIGHT];
     while (!knights.empty())
-        result |= knight_moves[knights.pop()] & ~board.bbs[attackers];
+        result |= knight_moves[knights.pop()];
 
     BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
-    result |= valid_sliding_moves<NORTHEAST>(diags, board, attackers);
-    result |= valid_sliding_moves<SOUTHEAST>(diags, board, attackers);
-    result |= valid_sliding_moves<SOUTHWEST>(diags, board, attackers);
-    result |= valid_sliding_moves<NORTHWEST>(diags, board, attackers);
+    result |= sliding_threats<NORTHEAST>(diags, board, attackers);
+    result |= sliding_threats<SOUTHEAST>(diags, board, attackers);
+    result |= sliding_threats<SOUTHWEST>(diags, board, attackers);
+    result |= sliding_threats<NORTHWEST>(diags, board, attackers);
     
     BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
-    result |= valid_sliding_moves<NORTH>(straights, board, attackers);
-    result |= valid_sliding_moves<EAST>(straights, board, attackers);
-    result |= valid_sliding_moves<SOUTH>(straights, board, attackers);
-    result |= valid_sliding_moves<WEST>(straights, board, attackers);
+    result |= sliding_threats<NORTH>(straights, board, attackers);
+    result |= sliding_threats<EAST>(straights, board, attackers);
+    result |= sliding_threats<SOUTH>(straights, board, attackers);
+    result |= sliding_threats<WEST>(straights, board, attackers);
     
     BB64 king = board.bbs[attackers, KING];
-    result |= king_moves[king.lsb()] & ~board.bbs[attackers];
+    result |= king_moves[king.lsb()];
     return result;
 }
 
@@ -185,18 +186,18 @@ bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) 
         return true;
 
     BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
-    BB64 diag_threats = valid_sliding_moves<NORTHEAST>(diags, board, attackers);
-    diag_threats |= valid_sliding_moves<SOUTHEAST>(diags, board, attackers);
-    diag_threats |= valid_sliding_moves<SOUTHWEST>(diags, board, attackers);
-    diag_threats |= valid_sliding_moves<NORTHWEST>(diags, board, attackers);
+    BB64 diag_threats = sliding_threats<NORTHEAST>(diags, board, attackers);
+    diag_threats |= sliding_threats<SOUTHEAST>(diags, board, attackers);
+    diag_threats |= sliding_threats<SOUTHWEST>(diags, board, attackers);
+    diag_threats |= sliding_threats<NORTHWEST>(diags, board, attackers);
     if ((bb & diag_threats) != 0)
         return true;
     
     BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
-    BB64 straight_threats = valid_sliding_moves<NORTH>(straights, board, attackers);
-    straight_threats |= valid_sliding_moves<EAST>(straights, board, attackers);
-    straight_threats |= valid_sliding_moves<SOUTH>(straights, board, attackers);
-    straight_threats |= valid_sliding_moves<WEST>(straights, board, attackers);
+    BB64 straight_threats = sliding_threats<NORTH>(straights, board, attackers);
+    straight_threats |= sliding_threats<EAST>(straights, board, attackers);
+    straight_threats |= sliding_threats<SOUTH>(straights, board, attackers);
+    straight_threats |= sliding_threats<WEST>(straights, board, attackers);
     if ((bb & straight_threats) != 0)
         return true;
     
