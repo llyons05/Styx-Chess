@@ -238,6 +238,32 @@ constexpr Direction operator!(Direction dir) {
     return Direction((dir + 4) % NUM_DIRECTIONS);
 }
 
+
+template<typename T, int Max>
+class Clamped_Stat {
+    static_assert(std::is_arithmetic_v<T>, "Not an arithmetic type");
+    static_assert(Max <= std::numeric_limits<T>::max(), "Max overflows T");
+
+    T data;
+
+public:
+    Clamped_Stat () : data(0) {}
+
+    Clamped_Stat& operator=(const T& v) {
+        data = v;
+        return *this;
+    }
+
+    operator const T&() const { return data; }
+
+    void operator<<(int bonus) {
+        int clampedBonus = std::clamp(bonus, -Max, Max);
+        data += clampedBonus - data * std::abs(clampedBonus) / Max;
+        assert(std::abs(data) <= Max);
+    }
+};
+
+
 constexpr U8 binary_to_square(U64 binary) {
     if (binary == 0) return 0;
     return __builtin_ctzll(binary);

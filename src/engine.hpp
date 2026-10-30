@@ -6,8 +6,6 @@
 
 #include <atomic>
 
-constexpr int CAPTURE_VAL = 10;
-
 struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
@@ -34,6 +32,7 @@ public:
 private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
+    Clamped_Stat<int16_t, 998> history_table[NUM_COLORS][64][64]{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);

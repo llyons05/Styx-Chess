@@ -91,6 +91,8 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
             else if (move == killer_moves[stack->ply][1])
                 move.score = KILLER_ORDERING_VAL - 1;
         }
+        if (move.score < KILLER_ORDERING_VAL-1)
+            move.score = history_table[board.stm()][move.from][move.to];
     }
 }
 
@@ -308,6 +310,9 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
+                if (!m.is_capture() && !m.is_promo())
+                    history_table[board.stm()][m.from][m.to] << depth*10;
+
                 break;
             }
             tt_flag = TT_EXACT;
