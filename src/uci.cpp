@@ -48,7 +48,7 @@ void UCI_Command::send_command(const std::string& command) {
 void UCI_Command::id(const std::string& name, const std::string& author) {
     send_command("id name " + name);
     send_command("id author " + author);
-    option("Hash", "type spin default 1 min 1 max 128");
+    option("Hash", "type spin default 128 min 1 max 256");
 }
 
 void UCI_Command::uciok() {

@@ -22,7 +22,7 @@ typedef int Depth;
 
 constexpr std::string version_str = STRINGIFY(VERSION_STR);
 constexpr TimePoint INF_TIME = std::numeric_limits<TimePoint>::max();
-constexpr U64 DEF_TABLE_SIZE = 1048576;
+constexpr U64 DEF_TABLE_SIZE = 1000000*28;
 
 constexpr Depth MAX_PLY = 100;
 constexpr int MAX_GAME_LENGTH = 1024;
