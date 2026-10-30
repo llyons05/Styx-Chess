@@ -336,6 +336,10 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     if (search_cancelled)
         return 0;
 
+    // The only draws that can happen in quiescence are insufficient material (or stalemate, but we check that too)
+    if (!(board.bbs.has_mating_material(WHITE) || board.bbs.has_mating_material(BLACK)))
+        return 0;
+
     Score static_eval = eval(board, stack);
     if (stack->ply >= MAX_PLY)
         return static_eval;
