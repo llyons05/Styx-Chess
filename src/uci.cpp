@@ -48,7 +48,7 @@ void UCI_Command::send_command(const std::string& command) {
 void UCI_Command::id(const std::string& name, const std::string& author) {
     send_command("id name " + name);
     send_command("id author " + author);
-    option("Hash", "type spin default 1 min 1 max 128");
+    option("Hash", "type spin default 128 min 1 max 256");
 }
 
 void UCI_Command::uciok() {
@@ -63,7 +63,7 @@ void UCI_Command::bestmove(const Move& move) {
     send_command("bestmove " + move.long_alg());
 }
 
-void UCI_Command::info(U64 nodes, Depth depth, TimePoint start_time, Score score) {
+void UCI_Command::info(U64 nodes, Depth depth, TimePoint start_time, Score score, U64 hash_full) {
     std::string info_str = "info nodes " + std::to_string(nodes) + " depth " + std::to_string(depth) + " score ";
     if (abs(score) >= MIN_WINNING_SCORE) {
         if (score < 0)
@@ -77,6 +77,8 @@ void UCI_Command::info(U64 nodes, Depth depth, TimePoint start_time, Score score
     TimePoint elapsed = get_time() - start_time;
     if (elapsed)
         info_str += " nps " + std::to_string(int64_t(1000 * double(nodes)/double(elapsed)));
+    
+    info_str += " hashfull " + std::to_string(hash_full);
     send_command(info_str);
 }
 
@@ -117,7 +119,7 @@ void UCI_Command::setoption() {
 
 void UCI_Command::ucinewgame() {
     board = Board();
-    engine = Engine(uci_options.hash_size);
+    engine.new_game();
 }
 
 void UCI_Command::position() {

@@ -2,7 +2,8 @@
 
 #include "uci.hpp"
 
-Engine& Engine::operator=(const Engine& other) {
+
+Engine& Engine::operator=(Engine&& other) {
     if (this != &other) {
         search_cancelled = other.search_cancelled;
         external_cancel.store(other.external_cancel.load(std::memory_order::relaxed),
@@ -14,6 +15,16 @@ Engine& Engine::operator=(const Engine& other) {
         tt = other.tt;
     }
     return *this;
+}
+
+void Engine::new_game() {
+    search_cancelled = false;
+    external_cancel.store(false, std::memory_order::relaxed);
+    nodes_traversed = 0;
+    time_limit = INF_TIME;
+    start_time = 0;
+    best_move = Move();
+    tt.clear();
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
@@ -113,13 +124,13 @@ Score Engine::search_iterate(Board& board) {
 
     Depth current_depth = 1;
     Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
-    UCI_Command::info(nodes_traversed, 1, start_time, final_val);
+    UCI_Command::info(nodes_traversed, 1, start_time, final_val, tt.hashfull());
 
     while (((abs(final_val) < MIN_WINNING_SCORE) || (current_depth <= 3)) && !search_cancelled && (current_depth < MAX_PLY)) {
         Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
         if (!search_cancelled)
             final_val = temp_val;
-        UCI_Command::info(nodes_traversed, current_depth, start_time, final_val);
+        UCI_Command::info(nodes_traversed, current_depth, start_time, final_val, tt.hashfull());
         current_depth++;
     }
 

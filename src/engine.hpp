@@ -26,7 +26,8 @@ public:
     TimePoint start_time = 0;
 
     Engine(U64 tt_size) : tt(tt_size) {}
-    Engine& operator=(const Engine& other);
+    Engine& operator=(Engine&& other);
+    void new_game();
 
     Move find_move(Board& board, const Time_Info& tc_info);
     
