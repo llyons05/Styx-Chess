@@ -19,18 +19,20 @@ bool Board::is_draw() {
     if (bbs.fifty_move_rule >= 100)
         return true;
     
-    if (!bbs.has_mating_material(WHITE) && !bbs.has_mating_material(BLACK))
+    if (!(bbs.has_mating_material(WHITE) || bbs.has_mating_material(BLACK)))
         return true;
 
     int curr = stack_index;
-    int seen = 0;
+    bool seen = false;
     int lowest = stack_index - bbs.fifty_move_rule;
-    while ((curr >= lowest) && (curr > 1) && (seen < 2)) {
+    while ((curr >= lowest) && (curr > 1) && !seen) {
         curr -= 2;
-        if (rep_stack[curr % MAX_GAME_LENGTH ] == bbs.hash_key)
-            seen++;
+        if (rep_stack[curr % MAX_GAME_LENGTH ] == bbs.hash_key) {
+            seen = true;
+            break;
+        }
     }
-    return seen >= 2;
+    return seen;
 }
 
 void Board::print() const {
