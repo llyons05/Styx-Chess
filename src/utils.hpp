@@ -253,6 +253,11 @@ public:
         data = v;
         return *this;
     }
+    
+    Clamped_Stat& operator/=(T d) {
+        data /= d;
+        return *this;
+    }
 
     operator const T&() const { return data; }
 
@@ -261,6 +266,7 @@ public:
         data += clampedBonus - data * std::abs(clampedBonus) / Max;
         assert(std::abs(data) <= Max);
     }
+
 };
 
 

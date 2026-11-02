@@ -6,6 +6,13 @@
 
 #include <atomic>
 
+constexpr int TT_ORDERING_VAL       = 100000;
+constexpr int ROOT_ORDERING_VAL     = 100000;
+constexpr int PROMO_ORDERING_VAL    = 30000;
+constexpr int CAPTURE_ORDERING_VAL  = 25000;
+constexpr int KILLER_ORDERING_VAL   = 10000;
+constexpr int HISTORY_ORDERING_VAL  = 4000;
+
 struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
@@ -32,7 +39,7 @@ public:
 private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
-    Clamped_Stat<int16_t, 998> history_table[NUM_COLORS][64][64]{};
+    Clamped_Stat<int16_t, HISTORY_ORDERING_VAL> history_table[NUM_COLORS][64][64]{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
@@ -84,9 +91,3 @@ constexpr Score king_safety_table[64] {
     -8, -8, -8, -8, -8, -8, -8, -8,
     -8, -8, -8, -8, -8, -8, -8, -8,
 };
-
-constexpr int TT_ORDERING_VAL       = 100000;
-constexpr int ROOT_ORDERING_VAL     = 100000;
-constexpr int PROMO_ORDERING_VAL    = 5000;
-constexpr int CAPTURE_ORDERING_VAL  = 3000;
-constexpr int KILLER_ORDERING_VAL   = 1000;

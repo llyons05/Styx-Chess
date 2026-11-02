@@ -40,6 +40,12 @@ void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
     nodes_traversed = 0;
     start_time = get_time();
     search_cancelled = false;
+
+    for (int i = 0; i < NULL_SQUARE; i++)
+        for (int j = 0; j < NULL_SQUARE; j++) {
+            history_table[WHITE][i][j] /= 2;
+            history_table[BLACK][i][j] /= 2;
+        }
 }
 
 TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
@@ -311,7 +317,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
                 if (!m.is_capture() && !m.is_promo())
-                    history_table[board.stm()][m.from][m.to] << depth*10;
+                    history_table[board.stm()][m.from][m.to] << depth*depth;
 
                 break;
             }
