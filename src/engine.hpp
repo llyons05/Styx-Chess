@@ -61,6 +61,7 @@ private:
     Score eval(const Board& board, Search_Stack* stack);
     Score endgame_pawn_eval(const Board& board);
     Score midgame_pawn_eval(const Board& board);
+    Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)

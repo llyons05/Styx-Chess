@@ -423,9 +423,10 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
     BB64 black_attacks = stack->threats[BLACK] & ~board.bbs[BLACK];
     Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 4;
     Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 8;
+    Score hanging_score = hanging_pieces_eval(board, stack);
 
     result += white_mat - black_mat;
-    result += threat_score + attack_score + knight_score;
+    result += threat_score + attack_score + hanging_score + knight_score;
 
     Score midgame_score = center_score + midgame_pawn_score + king_safety_score;
     Score endgame_score = endgame_pawn_score;
@@ -484,6 +485,29 @@ Score Engine::midgame_pawn_eval(const Board& board) {
             result -= (black_pawns & (BB64(A7) | B7 | C7)).bitcount() * 8;
             result -= (black_pawns & (BB64(A6) | B6 | C6)).bitcount() * 4;
         }
+    }
+    return result;
+}
+
+
+Score Engine::hanging_pieces_eval(const Board& board, Search_Stack* stack) {
+    BB64 white_hanging = (stack->threats[BLACK] & ~stack->threats[WHITE]) & board.bbs[WHITE];
+    BB64 black_hanging = (stack->threats[WHITE] & ~stack->threats[BLACK]) & board.bbs[BLACK];
+
+    Score white_scalar = board.stm() == WHITE ? (white_hanging.bitcount() > 1 ? 8 : 16) : 4;
+    Score black_scalar = board.stm() == BLACK ? (black_hanging.bitcount() > 1 ? 8 : 16) : 4;
+
+    Score result = 0;
+    while (white_hanging) {
+        eSquare s = white_hanging.pop();
+        Piece p = board.bbs.piece_at(s);
+        result -= mat_val(p.pt) / white_scalar;
+    }
+
+    while (black_hanging) {
+        eSquare s = black_hanging.pop();
+        Piece p = board.bbs.piece_at(s);
+        result += mat_val(p.pt) / black_scalar;
     }
     return result;
 }
