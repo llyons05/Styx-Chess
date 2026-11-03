@@ -238,7 +238,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     TT_Entry& tt_entry = tt.at(board.bbs.hash_key);
     U8 tt_move_id = 255;
     if (tt_entry.hash == board.bbs.hash_key) {
-        // std::cerr << "TT HIT\n";
+        tt_move_id = tt_entry.best_move_id;
         if (tt_entry.depth >= depth) {
             Score tt_eval = tt_entry.root_relative_eval(stack->ply);
             if (tt_entry.entry_type == TT_EXACT)
@@ -247,8 +247,6 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
                 beta = std::min(beta, tt_eval);
             else
                 alpha = std::max(alpha, tt_eval);
-            
-            tt_move_id = tt_entry.best_move_id;
         }
         if (alpha >= beta)
             return alpha;
