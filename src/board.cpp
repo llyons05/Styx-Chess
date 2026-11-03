@@ -23,18 +23,20 @@ bool Board::is_draw(int depth_to_root) {
         return true;
 
     int seen = 0;
-    int curr = stack_index;
+    int curr = stack_index-2;
     int threefold_rep_bound = stack_index - bbs.fifty_move_rule;
     int twofold_rep_bound = stack_index - depth_to_root;
-    while ((curr >= threefold_rep_bound) && (curr > 1) && (seen < 2)) {
-        curr -= 2;
+    while (curr >= threefold_rep_bound && curr >= 0) {
         if (rep_stack[curr % MAX_GAME_LENGTH] == bbs.hash_key) {
             if (curr > twofold_rep_bound)
                 return true;
-            seen++;
+            if (++seen >= 2)
+                return true;
         }
+        curr -= 2;
     }
-    return seen >= 2;
+
+    return false;
 }
 
 void Board::print() const {
