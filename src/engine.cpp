@@ -433,6 +433,11 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
 
     result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
 
+    if (!board.bbs.has_mating_material(WHITE))
+        result = std::min(0, result);
+    if (!board.bbs.has_mating_material(BLACK))
+        result = std::max(0, result);
+
     if (board.stm() == BLACK)
         return -result;
     return result;
