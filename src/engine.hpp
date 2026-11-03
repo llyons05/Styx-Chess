@@ -41,6 +41,11 @@ struct Eval_Data {
     }
 };
 
+enum Node_Type {
+    NonPV,
+    PV
+};
+
 struct Search_Stack {
     BB64 threats[NUM_COLORS]{};
     Eval_Data eval_data;
@@ -99,6 +104,7 @@ private:
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
     Score search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth);
+    template <Node_Type node_type>
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score q_search(Board& board, Search_Stack* stack, Score alpha, Score beta);
     
