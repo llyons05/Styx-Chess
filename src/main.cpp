@@ -18,7 +18,7 @@ void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
     std::vector<std::pair<Move, BB_State_Info>> move_history;
 
     while (true) {
-        if (board.is_draw())
+        if (board.is_draw(0))
             break;
         Move_Generator mg(board);
         bool undo = false;

@@ -231,7 +231,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     bool flag_in_check = in_check(board, board.stm(), stack);
     if (flag_in_check) depth++;
 
-    if (board.is_draw()) {
+    if (board.is_draw(stack->ply)) {
         return 0;
     }
 

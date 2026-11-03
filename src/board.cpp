@@ -15,24 +15,26 @@ void Board::undo(const Move& m, const BB_State_Info& state_info) {
     stack_index--;
 }
 
-bool Board::is_draw() {
+bool Board::is_draw(int depth_to_root) {
     if (bbs.fifty_move_rule >= 100)
         return true;
     
     if (!(bbs.has_mating_material(WHITE) || bbs.has_mating_material(BLACK)))
         return true;
 
+    int seen = 0;
     int curr = stack_index;
-    bool seen = false;
-    int lowest = stack_index - bbs.fifty_move_rule;
-    while ((curr >= lowest) && (curr > 1) && !seen) {
+    int threefold_rep_bound = stack_index - bbs.fifty_move_rule;
+    int twofold_rep_bound = stack_index - depth_to_root;
+    while ((curr >= threefold_rep_bound) && (curr > 1) && (seen < 2)) {
         curr -= 2;
-        if (rep_stack[curr % MAX_GAME_LENGTH ] == bbs.hash_key) {
-            seen = true;
-            break;
+        if (rep_stack[curr % MAX_GAME_LENGTH] == bbs.hash_key) {
+            if (curr > twofold_rep_bound)
+                return true;
+            seen++;
         }
     }
-    return seen;
+    return seen >= 2;
 }
 
 void Board::print() const {

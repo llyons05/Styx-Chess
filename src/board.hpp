@@ -22,7 +22,7 @@ public:
 
     Piece move(const Move& m);
     void undo(const Move& m, const BB_State_Info& state_info);
-    bool is_draw();
+    bool is_draw(int depth_to_root);
 
     void print() const;
 private:
