@@ -104,7 +104,7 @@ constexpr ePieceType operator++(ePieceType& piece, int) {
 }
 
 constexpr Score mat_val(ePieceType pt) {
-    constexpr Score vals[NUM_PIECE_TYPES+1] = {100, 300, 300, 500, 900, 0, 0};
+    constexpr Score vals[NUM_PIECE_TYPES+1] = {100, 350, 325, 500, 900, 0, 0};
     return vals[pt];
 }
 
