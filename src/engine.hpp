@@ -13,6 +13,11 @@ constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
 
+enum Node_Type {
+    NonPV,
+    PV
+};
+
 struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
@@ -52,6 +57,7 @@ private:
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
     Score search_root(Board& board, Move_Generator& root_mg, Search_Stack* stack, Score alpha, Score beta, Depth depth);
+    template <Node_Type node_type>
     Score search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth);
     Score q_search(Board& board, Search_Stack* stack, Score alpha, Score beta);
     

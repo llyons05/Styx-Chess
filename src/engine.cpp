@@ -255,16 +255,29 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     int chosen_move_idx = 0;
     eEntry_Type tt_flag = TT_LOWERBOUND;
 
+    int moves_tried = 0;
     for (size_t i = 0; i < root_mg.movelist.size(); i++) {
         Move& m = root_mg.next_move(i);
+        Score val = -INF_SCORE;
         // std::cout << "Playing move " << m << " at depth " << depth << " score=" << m.score << "\n";
         if (!do_move(board, stack, m)) {
             undo_move(board, stack, m);
             m.score = -INF_SCORE;
             continue;
         }
+        moves_tried++;
         update_stack(board, stack+1);
-        Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
+
+        if (moves_tried <= 1) {
+            val = -search<PV>(board, stack+1, -beta, -alpha, depth-1);
+            if (val <= alpha) {
+                undo_move(board, stack, m);
+                return alpha;
+            }
+        }
+        else if (-search<NonPV>(board, stack+1, -alpha - 1, -alpha, depth-1) > alpha)
+            val = -search<PV>(board, stack+1, -beta, -alpha, depth-1);
+        
         undo_move(board, stack, m);
 
         if (search_cancelled)
@@ -291,6 +304,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     return alpha;
 }
 
+template <Node_Type node_type>
 Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta, Depth depth) {
     assert(stack->ply <= MAX_PLY);
     nodes_traversed++;
@@ -298,6 +312,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (search_cancelled)
         return 0;
     
+    constexpr bool is_pv = node_type == PV;
     bool flag_in_check = in_check(board, board.stm(), stack);
     if (flag_in_check) depth++;
 
@@ -332,7 +347,8 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (alpha >= beta) return alpha;
 
     // Null Move pruning
-    if (!flag_in_check
+    if (!is_pv
+     && !flag_in_check
      && (depth > 2)
      && !(stack-1)->current_move.is_nullmove()
      && (board.bbs.piece_counts[board.stm()][PAWN]*mat_val(PAWN) < board.bbs.material[board.stm()])
@@ -340,7 +356,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         Depth reduction = (depth > 5) ? 3 : 2;
         do_move(board, stack, Move::null());
         update_stack(board, stack+1);
-        Score null_score = -search(board, stack+1, -beta, -(beta - 1), depth-reduction);
+        Score null_score = -search<NonPV>(board, stack+1, -beta, -(beta - 1), depth-reduction);
         undo_move(board, stack, Move::null());
         if (null_score >= beta) {
             return beta;
@@ -349,7 +365,8 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
     // Futility Pruning
     bool futility_prune = false;
-    if (!flag_in_check
+    if (!is_pv
+     && !flag_in_check
      && (depth <= 3)
      && (abs(alpha) < MIN_WINNING_SCORE)
      && (eval(board, stack) + 200*depth <= alpha))
@@ -360,8 +377,10 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     eEntry_Type tt_flag = TT_UPPERBOUND;
     U8 best_move_id = 255;
     int moves_tried = 0;
+    bool raised_alpha = false;
     for (size_t i = 0; i < mg.movelist.size(); i++) {
         Move& m = mg.next_move(i);
+        Score val = -INF_SCORE;
         if (!do_move(board, stack, m)) {
             undo_move(board, stack, m);
             continue;
@@ -376,28 +395,31 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             undo_move(board, stack, m);
             continue;
         }
+        moves_tried++;
 
         stack->reduction = 0;
+        Depth new_depth = depth - 1;
         if ((depth >= 2)
-         && (moves_tried > 3)
+         && (moves_tried > 4)
          && (m.score < KILLER_ORDERING_VAL-1)
          && !in_check(board, board.stm(), stack+1)
          && !flag_in_check) {
-            int r = reductions[depth-1] + reductions[moves_tried-1];
+            int r = reductions[depth-1] + reductions[moves_tried];
             if (m.is_capture())
                 r -= mat_val(m.piece_captured)*8;
             else
                 r -= m.score/2;
             stack->reduction = std::clamp(r/1024, 0, depth);
+            val = -search<NonPV>(board, stack+1, -alpha - 1, -alpha, new_depth - stack->reduction + is_pv);
+            if ((val > alpha) && stack->reduction)
+                val = -search<NonPV>(board, stack+1, -alpha - 1, -alpha, new_depth);
+        }
+        else if (!is_pv || moves_tried > 1) {
+            val = -search<NonPV>(board, stack+1, -alpha - 1, -alpha, new_depth);
         }
 
-        moves_tried++;
-        Depth new_depth = depth - 1 - stack->reduction;
-        Score val = -search(board, stack+1, -beta, -alpha, new_depth);
-
-        if ((val > alpha) && (stack->reduction != 0)) {
-            new_depth = depth-1;
-            val = -search(board, stack+1, -beta, -alpha, new_depth);
+        if (is_pv && (moves_tried == 1 || val > alpha)) {
+            val = -search<PV>(board, stack+1, -beta, -alpha, new_depth);
         }
 
         undo_move(board, stack, m);
@@ -408,6 +430,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         if (val > alpha) {
             alpha = val;
             best_move_id = m.id;
+            raised_alpha = true;
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
