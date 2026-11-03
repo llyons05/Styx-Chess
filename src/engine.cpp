@@ -287,7 +287,6 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
      && (eval(board, stack) + 200*depth <= alpha))
         futility_prune = true;
 
-    stack->state_info = board.bbs.state_info();
     Move_Generator mg(board);
     set_movescores(board, mg, stack, tt_move_id);
     eEntry_Type tt_flag = TT_UPPERBOUND;
