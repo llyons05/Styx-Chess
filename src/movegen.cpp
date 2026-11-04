@@ -7,8 +7,8 @@ std::array<Magic_Table<ROOK>, 64> rook_magics;
 template <eColor C>
 std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
-    gen_bishop_moves();
     gen_knight_moves();
+    gen_bishop_moves();
     gen_rook_moves();
     gen_queen_moves();
     gen_king_moves();
@@ -16,6 +16,7 @@ std::vector<Move>& Move_Generator::gen_moves() {
 }
 
 void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSquare from, BB64 to, eSpecialMoveFlags flag) {
+    to &= filter_bb;
     destinations |= to;
     while(to) {
         eSquare dest = to.pop();

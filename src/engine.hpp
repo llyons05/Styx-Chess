@@ -46,7 +46,7 @@ private:
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
     void init_stack(const Board& board, Search_Stack* stack_base);
     void update_stack(const Board& board, Search_Stack* stack);
-    void set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
+    void set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
     void set_killers(const Move& move, Search_Stack* stack);
 
     Score search_iterate(Board& board);
@@ -62,6 +62,7 @@ private:
     Score endgame_pawn_eval(const Board& board);
     Score midgame_pawn_eval(const Board& board);
     Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
+    Score static_exchange_eval(Board& board, const Move& move);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)

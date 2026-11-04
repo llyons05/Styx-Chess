@@ -13,8 +13,9 @@ class Move_Generator {
 public:
     std::vector<Move> movelist;
     BB64 destinations;
+    BB64 filter_bb;
 
-    Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
+    Move_Generator(const Board& board, BB64 filter_bb = ~0ULL) : movelist(), destinations(0), filter_bb(filter_bb), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
             gen_moves<WHITE>();

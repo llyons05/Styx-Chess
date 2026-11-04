@@ -73,15 +73,19 @@ void Engine::update_stack(const Board& board, Search_Stack* stack) {
     stack->state_info = board.bbs.state_info();
 }
 
-void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
-    constexpr int sorting_vals[NUM_PIECE_TYPES+1] = {mat_val(PAWN), mat_val(BISHOP), mat_val(KNIGHT), mat_val(ROOK), mat_val(QUEEN), mat_val(QUEEN)+1, 0};
+void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
     BB64 opp_threats = stack->threats[!board.stm()];
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
         if (move.is_capture()) {
-            move.score = CAPTURE_ORDERING_VAL/2 + sorting_vals[move.piece_captured] - move.piece_from;
-            if ((sorting_vals[move.piece_from] <= sorting_vals[move.piece_captured]) || (opp_threats & move.to).empty())
-                move.score += CAPTURE_ORDERING_VAL/2;
+            Score see = mat_val(move.piece_captured) - move.piece_from;
+            if (opp_threats.filled(move.to))
+                see = static_exchange_eval(board, move);
+
+            if (see < 0)
+                move.score = -CAPTURE_ORDERING_VAL + see;
+            else
+                move.score = CAPTURE_ORDERING_VAL + see;
         }
 
         if (move.is_promo()) {
@@ -100,6 +104,19 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
         if (move.score < KILLER_ORDERING_VAL-1)
             move.score = history_table[board.stm()][move.from][move.to];
     }
+}
+
+Score Engine::static_exchange_eval(Board& board, const Move& move) {
+    if (move.piece_captured == KING)
+        return mat_val(KING);
+    Score result = mat_val(move.piece_captured);
+    BB_State_Info state_info = board.bbs.state_info();
+    board.move(move);
+    Move_Generator mg(board, move.to);
+    if (mg.movelist.size() > 0)
+        result -= static_exchange_eval(board, mg[0]);
+    board.undo(move, state_info);
+    return result;
 }
 
 void Engine::set_killers(const Move& move, Search_Stack* stack) {
