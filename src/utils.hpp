@@ -51,6 +51,11 @@ class PRNG {
     T rand() {
         return T(rand64());
     }
+
+    template<typename T = U64>
+    T sparse_rand() {
+        return T(rand64() & rand64() & rand64());
+    }
 } extern rng;
 
 enum eColor : U8 {

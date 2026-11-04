@@ -1,5 +1,9 @@
 #include "movegen.hpp"
 
+PRNG magic_rng(1070372);
+std::array<Magic_Table<BISHOP>, 64> bishop_magics;
+std::array<Magic_Table<ROOK>, 64> rook_magics;
+
 template <eColor C>
 std::vector<Move>& Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
@@ -74,11 +78,7 @@ void Move_Generator::gen_bishop_moves() {
     BB64 bishops = bbs.stm_bb(BISHOP);
     while (!bishops.empty()) {
         eSquare s = bishops.pop();
-        BB64 valid_moves = 0;
-        valid_moves |= sliding_threats<NORTHEAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTHEAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTHWEST>(s, board, board.stm());
-        valid_moves |= sliding_threats<NORTHWEST>(s, board, board.stm());
+        BB64 valid_moves = bishop_magics[s].moves(board.bbs.all());
         write_moves(BISHOP, BISHOP, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
@@ -96,11 +96,7 @@ void Move_Generator::gen_rook_moves() {
     BB64 rooks = bbs.stm_bb(ROOK);
     while (!rooks.empty()) {
         eSquare s = rooks.pop();
-        BB64 valid_moves = 0;
-        valid_moves |= sliding_threats<NORTH>(s, board, board.stm());
-        valid_moves |= sliding_threats<EAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTH>(s, board, board.stm());
-        valid_moves |= sliding_threats<WEST>(s, board, board.stm());
+        BB64 valid_moves = rook_magics[s].moves(board.bbs.all());
         write_moves(ROOK, ROOK, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
@@ -109,15 +105,7 @@ void Move_Generator::gen_queen_moves() {
     BB64 queens = bbs.stm_bb(QUEEN);
     while (!queens.empty()) {
         eSquare s = queens.pop();
-        BB64 valid_moves = 0;
-        valid_moves |= sliding_threats<NORTH>(s, board, board.stm());
-        valid_moves |= sliding_threats<EAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTH>(s, board, board.stm());
-        valid_moves |= sliding_threats<WEST>(s, board, board.stm());
-        valid_moves |= sliding_threats<NORTHEAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTHEAST>(s, board, board.stm());
-        valid_moves |= sliding_threats<SOUTHWEST>(s, board, board.stm());
-        valid_moves |= sliding_threats<NORTHWEST>(s, board, board.stm());
+        BB64 valid_moves = bishop_magics[s].moves(board.bbs.all()) | rook_magics[s].moves(board.bbs.all());
         write_moves(QUEEN, QUEEN, s, valid_moves & ~board.bbs.stm_bb(), MFLAG_NORMAL);
     }
 }
@@ -157,16 +145,12 @@ BB64 Move_Generator::attacks(const Board& board, eColor attackers) {
         result |= knight_moves[knights.pop()];
 
     BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
-    result |= sliding_threats<NORTHEAST>(diags, board, attackers);
-    result |= sliding_threats<SOUTHEAST>(diags, board, attackers);
-    result |= sliding_threats<SOUTHWEST>(diags, board, attackers);
-    result |= sliding_threats<NORTHWEST>(diags, board, attackers);
+    while (!diags.empty())
+        result |= bishop_magics[diags.pop()].moves(board.bbs.all());
     
     BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
-    result |= sliding_threats<NORTH>(straights, board, attackers);
-    result |= sliding_threats<EAST>(straights, board, attackers);
-    result |= sliding_threats<SOUTH>(straights, board, attackers);
-    result |= sliding_threats<WEST>(straights, board, attackers);
+    while (!straights.empty())
+        result |= rook_magics[straights.pop()].moves(board.bbs.all());
     
     BB64 king = board.bbs[attackers, KING];
     result |= king_moves[king.lsb()];
@@ -179,27 +163,19 @@ bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) 
         return true;
 
     BB64 knights = board.bbs[attackers, KNIGHT];
-    BB64 knight_threats = 0;
     while (!knights.empty())
-        knight_threats |= knight_moves[knights.pop()] & ~board.bbs[attackers];
-    if ((bb & knight_threats) != 0)
-        return true;
+        if ((bb & knight_moves[knights.pop()]) != 0)
+            return true;
 
     BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
-    BB64 diag_threats = sliding_threats<NORTHEAST>(diags, board, attackers);
-    diag_threats |= sliding_threats<SOUTHEAST>(diags, board, attackers);
-    diag_threats |= sliding_threats<SOUTHWEST>(diags, board, attackers);
-    diag_threats |= sliding_threats<NORTHWEST>(diags, board, attackers);
-    if ((bb & diag_threats) != 0)
-        return true;
+    while (!diags.empty())
+        if ((bb & bishop_magics[diags.pop()].moves(board.bbs.all())) != 0)
+            return true;
     
     BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
-    BB64 straight_threats = sliding_threats<NORTH>(straights, board, attackers);
-    straight_threats |= sliding_threats<EAST>(straights, board, attackers);
-    straight_threats |= sliding_threats<SOUTH>(straights, board, attackers);
-    straight_threats |= sliding_threats<WEST>(straights, board, attackers);
-    if ((bb & straight_threats) != 0)
-        return true;
+    while (!straights.empty())
+        if ((bb & rook_magics[straights.pop()].moves(board.bbs.all())) != 0)
+            return true;
     
     BB64 king = board.bbs[attackers, KING];
     BB64 king_threats = king_moves[king.pop()] & ~board.bbs[attackers];
@@ -216,5 +192,113 @@ BB64 Move_Generator::pawn_attacks(const Board& board) {
     return result | pawns.shift<take2>();
 }
 
+template <ePieceType pt>
+BB64 Magic_Table<pt>::rel_occupancy_bits(eSquare s) {
+    BB64 result = 0;
+    if (pt == BISHOP) {
+        result |= BB64(s).smear<NORTHEAST>();
+        result |= BB64(s).smear<SOUTHEAST>();
+        result |= BB64(s).smear<SOUTHWEST>();
+        result |= BB64(s).smear<NORTHWEST>();
+        result &= ~(ROWS[0] | ROWS[7] | COLS[FILE_A] | COLS[FILE_H]);
+    }
+    else {
+        int row = square_row(s);
+        int col = square_col(s);
+        result |= ROWS[row] & ~(COLS[FILE_A] | COLS[FILE_H]);
+        result |= COLS[col] & ~(ROWS[0] | ROWS[7]);
+    }
+    return result & ~BB64(s);
+}
+
+template <ePieceType pt>
+BB64 Magic_Table<pt>::attack_bb(eSquare s, BB64 occupied) {
+    constexpr Direction Dir1 = pt == BISHOP ? NORTHEAST : NORTH;
+    constexpr Direction Dir2 = pt == BISHOP ? SOUTHEAST : EAST;
+    constexpr Direction Dir3 = pt == BISHOP ? SOUTHWEST : SOUTH;
+    constexpr Direction Dir4 = pt == BISHOP ? NORTHWEST : WEST;
+    
+    BB64 valid_moves = 0;
+    BB64 next = BB64(s).shift<Dir1>();
+    while (!next.empty()) {
+        valid_moves |= next;
+        next = (next & ~occupied).shift<Dir1>();
+    }
+    next = BB64(s).shift<Dir2>();
+    while (!next.empty()) {
+        valid_moves |= next;
+        next = (next & ~occupied).shift<Dir2>();
+    }
+    next = BB64(s).shift<Dir3>();
+    while (!next.empty()) {
+        valid_moves |= next;
+        next = (next & ~occupied).shift<Dir3>();
+    }
+    next = BB64(s).shift<Dir4>();
+    while (!next.empty()) {
+        valid_moves |= next;
+        next = (next & ~occupied).shift<Dir4>();
+    }
+    return valid_moves;
+}
+
+template <ePieceType pt>
+BB64 Magic_Table<pt>::blocker_index_mask(BB64 occupancy_bits, int blocker_index) {
+    BB64 result = 0;
+    int n = occupancy_bits.bitcount();
+    for (int i = 0; i < n; i++) {
+        eSquare s = occupancy_bits.pop();
+        if (blocker_index & (1 << i)) result |= s;
+    }
+    return result;
+}
+
+template <ePieceType pt>
+size_t Magic_Table<pt>::blockers_to_index(BB64 blockers) {
+    return (U64(blockers) * magic) >> shift;
+}
+
+template <ePieceType pt>
+void Magic_Table<pt>::init(eSquare s) {
+    BB64 blockers[num_attacks]{}, temp[num_attacks]{};
+
+    mask = rel_occupancy_bits(s);
+    shift = 64 - mask.bitcount();
+    const U64 n = 1ULL << mask.bitcount();
+    for (U64 i = 0; i < n; i++) {
+        blockers[i] = blocker_index_mask(mask, i);
+        temp[i] = attack_bb(s, blockers[i]);
+    }
+
+    for (U64 attempt = 0; attempt < 1000000; attempt++) {
+        magic = magic_rng.sparse_rand();
+        if (BB64((magic * U64(mask)) & 0xFF00000000000000ULL).bitcount() > 6) continue;
+        std::fill_n(attacks, num_attacks, 0);
+
+        bool failed = false;
+        for (U64 i = 0; !failed && (i < n); i++) {
+            size_t index = blockers_to_index(blockers[i]);
+            if (attacks[index].empty())
+                attacks[index] = temp[i];
+            else if (attacks[index] != temp[i])
+                failed = true;
+        }
+        if (!failed) return; // Success :)
+    }
+    std::cerr << "FAILED TO GENERATE MAGICS\n";
+    assert(false); // Failure :(
+}
+
+
+void init_magics() {
+    for (eSquare s = A1; s < NULL_SQUARE; s++) {
+        bishop_magics[s].init(s);
+        rook_magics[s].init(s);
+    }
+}
+
 template std::vector<Move>& Move_Generator::gen_moves<WHITE>();
 template std::vector<Move>& Move_Generator::gen_moves<BLACK>();
+
+template class Magic_Table<BISHOP>;
+template class Magic_Table<ROOK>;

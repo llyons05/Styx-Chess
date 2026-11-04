@@ -109,5 +109,35 @@ constexpr std::array<BB64, 64> init_king_moves() {
     return result;
 }
 
+template <ePieceType pt>
+class Magic_Table {
+private:
+    static_assert(pt == BISHOP || pt == ROOK);
+    static const size_t num_attacks = pt == BISHOP ? 512 : 4096;
+    BB64 attacks[num_attacks];
+    BB64 mask;
+    U64 magic;
+    int shift;
+
+    static BB64 rel_occupancy_bits(eSquare s);
+    static BB64 attack_bb(eSquare s, BB64 occupied);
+    static BB64 blocker_index_mask(BB64 occupancy_bits, int blocker_index);
+
+    size_t blockers_to_index(BB64 blockers);
+
+public:
+    Magic_Table() : attacks{}, mask(0), magic(0), shift(0) {}
+    
+    void init(eSquare s);
+    BB64 moves(BB64 occupied) {
+        return attacks[blockers_to_index(occupied & mask)];
+    }
+};
+
+void init_magics();
+
 constexpr std::array<BB64, 64> knight_moves = init_knight_moves();
 constexpr std::array<BB64, 64> king_moves = init_king_moves();
+
+extern std::array<Magic_Table<BISHOP>, 64> bishop_magics;
+extern std::array<Magic_Table<ROOK>, 64> rook_magics;

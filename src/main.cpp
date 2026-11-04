@@ -129,6 +129,7 @@ void comp_mode() {
 }
 
 int main(int argc, char* argv[]) {
+    init_magics();
     if ((argc >= 2) && (std::string(argv[1]) == "-c")) {
         Time_Info tc_info;
         eColor player_color = ((argc >= 3) && (std::tolower(argv[2][0]) == 'w')) ? WHITE : ((argc >= 3) && (std::tolower(argv[2][0]) == 'b')) ? BLACK : NUM_COLORS;
