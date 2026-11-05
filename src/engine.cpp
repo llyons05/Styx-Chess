@@ -78,14 +78,15 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
         if (move.is_capture()) {
-            Score see = mat_val(move.piece_captured) - move.piece_from;
+            Score see = mat_val(move.piece_captured);
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
 
             if (see < 0)
-                move.score = -CAPTURE_ORDERING_VAL + see;
+                move.score = -CAPTURE_ORDERING_VAL + see - move.piece_from;
+            
             else
-                move.score = CAPTURE_ORDERING_VAL + see;
+                move.score = CAPTURE_ORDERING_VAL + see - move.piece_from;
         }
 
         if (move.is_promo()) {
@@ -139,12 +140,20 @@ Score Engine::static_exchange_eval(const Board& board, const Move& move) {
         occupied &= ~BB64(curr_attacker);
         if (causes_xray.filled(curr_attacker))
             attacks_to = Move_Generator::attacks_to(board.bbs.piece_bbs, occupied, move.to);
+
         if ((attacks_to != 0) && pt == KING) {
             d++;
             break;
         }
         curr_attacker = least_val_attacker(board.bbs.piece_bbs[curr_color], attacks_to);
+
+        if (std::max(-gain[d-1], gain[d]) < 0) {
+            if (curr_attacker != NULL_SQUARE)
+                d++;
+            break;
+        }
     } while (curr_attacker < NULL_SQUARE);
+
     while (--d)
         gain[d-1] = -std::max(-gain[d-1], gain[d]);
     return gain[0];
@@ -183,9 +192,7 @@ Score Engine::search_iterate(Board& board) {
     UCI_Command::info(nodes_traversed, 1, start_time, final_val, tt.hashfull());
 
     while (((abs(final_val) < MAX_SCORE - current_depth)) && !search_cancelled && (current_depth < MAX_PLY)) {
-        Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
-        if (!search_cancelled)
-            final_val = temp_val;
+        final_val = search_widen(board, root_mg, stack, current_depth, final_val);
         UCI_Command::info(nodes_traversed, current_depth, start_time, final_val, tt.hashfull());
         current_depth++;
     }
@@ -423,7 +430,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!m.is_capture() && !m.is_promo()) {
+        if (!m.is_capture() && !m.is_promo()) { // if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) This worked
             undo_move(board, stack, m);
             continue;
         }
