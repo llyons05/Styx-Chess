@@ -94,8 +94,8 @@ constexpr U8 relative_row(eColor c, U8 row) {
 
 enum ePieceType : U8 {
     PAWN,
-    BISHOP,
     KNIGHT,
+    BISHOP,
     ROOK,
     QUEEN,
     KING,
@@ -109,7 +109,7 @@ constexpr ePieceType operator++(ePieceType& piece, int) {
 }
 
 constexpr Score mat_val(ePieceType pt) {
-    constexpr Score vals[NUM_PIECE_TYPES+1] = {100, 350, 325, 500, 900, 10000, 0};
+    constexpr Score vals[NUM_PIECE_TYPES+1] = {100, 325, 350, 500, 900, 10000, 0};
     return vals[pt];
 }
 

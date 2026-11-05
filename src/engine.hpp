@@ -62,7 +62,7 @@ private:
     Score endgame_pawn_eval(const Board& board);
     Score midgame_pawn_eval(const Board& board);
     Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
-    Score static_exchange_eval(Board& board, const Move& move);
+    Score static_exchange_eval(const Board& board, const Move& move);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)

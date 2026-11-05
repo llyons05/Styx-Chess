@@ -13,9 +13,8 @@ class Move_Generator {
 public:
     std::vector<Move> movelist;
     BB64 destinations;
-    BB64 filter_bb;
 
-    Move_Generator(const Board& board, BB64 filter_bb = ~0ULL) : movelist(), destinations(0), filter_bb(filter_bb), board(board), bbs(board.bbs) {
+    Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
         // movelist.reserve(previous_movecount);
         if (board.stm() == WHITE)
             gen_moves<WHITE>();
@@ -45,6 +44,15 @@ public:
 
     static bool is_attacked(const Board& board, eColor attackers, BB64 bb);
     static BB64 attacks(const Board& board, eColor attackers);
+    static BB64 attacks_to(const BB64 pieces[NUM_COLORS][NUM_PIECE_TYPES], BB64 occupied, eSquare s);
+
+    template <eColor C>
+    static BB64 pawn_attacks(BB64 pawns);
+    static BB64 knight_attacks(BB64 knights);
+    static BB64 bishop_attacks(BB64 bishops, BB64 occupied);
+    static BB64 rook_attacks(BB64 rooks, BB64 occupied);
+    static BB64 queen_attacks(BB64 queens, BB64 occupied);
+    static BB64 king_attacks(BB64 kings);
 
 private:
     const Board& board;
@@ -67,8 +75,6 @@ private:
     template<Direction D>
     static BB64 sliding_threats(BB64 pieces, const Board& board, eColor color);
 
-    template <eColor C>
-    static BB64 pawn_attacks(const Board& board);
 };
 
 

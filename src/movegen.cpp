@@ -16,7 +16,6 @@ std::vector<Move>& Move_Generator::gen_moves() {
 }
 
 void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSquare from, BB64 to, eSpecialMoveFlags flag) {
-    to &= filter_bb;
     destinations |= to;
     while(to) {
         eSquare dest = to.pop();
@@ -139,27 +138,22 @@ void Move_Generator::gen_king_moves() {
 }
 
 BB64 Move_Generator::attacks(const Board& board, eColor attackers) {
-    BB64 result = (attackers == WHITE) ? pawn_attacks<WHITE>(board) : pawn_attacks<BLACK>(board);
+    BB64 result = (attackers == WHITE) ? pawn_attacks<WHITE>(board.bbs[WHITE, PAWN]) : pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
 
-    BB64 knights = board.bbs[attackers, KNIGHT];
-    while (!knights.empty())
-        result |= knight_moves[knights.pop()];
+    result |= knight_attacks(board.bbs[attackers, KNIGHT]);
 
     BB64 diags = board.bbs[attackers, BISHOP] | board.bbs[attackers, QUEEN];
-    while (!diags.empty())
-        result |= bishop_magics[diags.pop()].moves(board.bbs.all());
+    result |= bishop_attacks(diags, board.bbs.all());
     
     BB64 straights = board.bbs[attackers, ROOK] | board.bbs[attackers, QUEEN];
-    while (!straights.empty())
-        result |= rook_magics[straights.pop()].moves(board.bbs.all());
+    result |= rook_attacks(straights, board.bbs.all());
     
-    BB64 king = board.bbs[attackers, KING];
-    result |= king_moves[king.lsb()];
+    result |= king_attacks(board.bbs[attackers, KING]);
     return result;
 }
 
 bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) {
-    BB64 pawn_threats = (attackers == WHITE) ? pawn_attacks<WHITE>(board) : pawn_attacks<BLACK>(board);
+    BB64 pawn_threats = (attackers == WHITE) ? pawn_attacks<WHITE>(board.bbs[WHITE, PAWN]) : pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
     if ((bb & pawn_threats) != 0)
         return true;
 
@@ -183,14 +177,59 @@ bool Move_Generator::is_attacked(const Board& board, eColor attackers, BB64 bb) 
     return (bb & king_threats) != 0;
 }
 
+BB64 Move_Generator::attacks_to(const BB64 pieces[NUM_COLORS][NUM_PIECE_TYPES], BB64 occupied, eSquare s) {
+    BB64 result = 0;
+    BB64 pawn_threats = (pawn_attacks<BLACK>(s) & pieces[WHITE][PAWN]) | (pawn_attacks<WHITE>(s) & pieces[BLACK][PAWN]);
+    result |= pawn_threats & (pieces[WHITE][PAWN] | pieces[BLACK][PAWN]);
+    result |= knight_attacks(s) & (pieces[WHITE][KNIGHT] | pieces[BLACK][KNIGHT]);
+    result |= bishop_attacks(s, occupied) & (pieces[WHITE][BISHOP] | pieces[WHITE][QUEEN] | pieces[BLACK][BISHOP] | pieces[BLACK][QUEEN]);
+    result |= rook_attacks(s, occupied) & (pieces[WHITE][ROOK] | pieces[WHITE][QUEEN] | pieces[BLACK][ROOK] | pieces[BLACK][QUEEN]);
+    result |= king_attacks(s) & (pieces[WHITE][KING] | pieces[BLACK][KING]);
+    return result & occupied;
+}
 
 template <eColor C>
-BB64 Move_Generator::pawn_attacks(const Board& board) {
+BB64 Move_Generator::pawn_attacks(BB64 pawns) {
     constexpr Direction take1 = (C == WHITE) ? NORTHEAST : SOUTHWEST;
     constexpr Direction take2 = (C == WHITE) ? NORTHWEST : SOUTHEAST;
-    BB64 pawns = board.bbs[C, PAWN];
     BB64 result = pawns.shift<take1>();
     return result | pawns.shift<take2>();
+}
+
+
+BB64 Move_Generator::knight_attacks(BB64 knights) {
+    BB64 result = 0;
+    while (!knights.empty())
+        result |= knight_moves[knights.pop()];
+    return result;
+}
+
+BB64 Move_Generator::bishop_attacks(BB64 bishops, BB64 occupied) {
+    BB64 result = 0;
+    while (!bishops.empty())
+        result |= bishop_magics[bishops.pop()].moves(occupied);
+    return result;
+}
+
+BB64 Move_Generator::rook_attacks(BB64 rooks, BB64 occupied) {
+    BB64 result = 0;
+    while (!rooks.empty())
+        result |= rook_magics[rooks.pop()].moves(occupied);
+    return result;
+}
+
+BB64 Move_Generator::queen_attacks(BB64 queens, BB64 occupied) {
+    BB64 result = 0;
+    while (!queens.empty()) {
+        eSquare s = queens.pop();
+        result |= bishop_magics[s].moves(occupied) | rook_magics[s].moves(occupied);
+    }
+    return result;
+}
+ 
+BB64 Move_Generator::king_attacks(BB64 king) {
+    BB64 result = king_moves[king.lsb()];
+    return result;
 }
 
 template <ePieceType pt>

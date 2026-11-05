@@ -94,6 +94,9 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
 
         if (move.id == tt_move_id)
             move.score = TT_ORDERING_VAL;
+        
+        if (move.score != 0)
+            continue;
 
         if (move.score < KILLER_ORDERING_VAL) {
             if (move == killer_moves[stack->ply][0])
@@ -106,17 +109,45 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
     }
 }
 
-Score Engine::static_exchange_eval(Board& board, const Move& move) {
-    if (move.piece_captured == KING)
-        return mat_val(KING);
-    Score result = mat_val(move.piece_captured);
-    BB_State_Info state_info = board.bbs.state_info();
-    board.move(move);
-    Move_Generator mg(board, move.to);
-    if (mg.movelist.size() > 0)
-        result -= static_exchange_eval(board, mg[0]);
-    board.undo(move, state_info);
-    return result;
+eSquare least_val_attacker(const BB64 bbs[NUM_COLORS], BB64 attackers) {
+    for (ePieceType p = PAWN; p < NUM_PIECE_TYPES; p++) {
+        if (bbs[p] & attackers)
+            return (bbs[p] & attackers).lsb();
+    }
+    return NULL_SQUARE;
+}
+
+Score Engine::static_exchange_eval(const Board& board, const Move& move) {
+    if (move.piece_from == KING)
+        return -mat_val(KING);
+
+    Score gain[32]{};
+    int d = 0;
+    gain[d] = mat_val(move.piece_captured);
+    BB64 occupied = board.bbs.all() & ~BB64(move.from);
+    BB64 attacks_to = Move_Generator::attacks_to(board.bbs.piece_bbs, occupied, move.to);
+    BB64 causes_xray = (board.bbs[WHITE] ^ board.bbs[WHITE, KING] ^ board.bbs[WHITE, KNIGHT]) | (board.bbs[BLACK] ^ board.bbs[BLACK, KING] ^ board.bbs[BLACK, KNIGHT]);
+    eColor curr_color = board.stm();
+    eSquare curr_attacker = move.from;
+    do {
+        d++;
+        assert(d < 32);
+        ePieceType pt = board.bbs.piece_at(curr_attacker).pt;
+        curr_color = !curr_color;
+        gain[d] = mat_val(pt) - gain[d-1];
+        attacks_to &= ~BB64(curr_attacker);
+        occupied &= ~BB64(curr_attacker);
+        if (causes_xray.filled(curr_attacker))
+            attacks_to = Move_Generator::attacks_to(board.bbs.piece_bbs, occupied, move.to);
+        if ((attacks_to != 0) && pt == KING) {
+            d++;
+            break;
+        }
+        curr_attacker = least_val_attacker(board.bbs.piece_bbs[curr_color], attacks_to);
+    } while (curr_attacker < NULL_SQUARE);
+    while (--d)
+        gain[d-1] = -std::max(-gain[d-1], gain[d]);
+    return gain[0];
 }
 
 void Engine::set_killers(const Move& move, Search_Stack* stack) {
