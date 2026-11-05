@@ -82,9 +82,8 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
 
-            if (see < 0)
+            if (see < -50)
                 move.score = -CAPTURE_ORDERING_VAL + see - move.piece_from;
-            
             else
                 move.score = CAPTURE_ORDERING_VAL + see - move.piece_from;
         }
@@ -209,7 +208,7 @@ Score Engine::search_widen(Board& board, Move_Generator& root_mg, Search_Stack* 
     while (true) {
         score = search_root(board, root_mg, stack, alpha, beta, depth);
         if (search_cancelled) {
-            if (score <= -INF_SCORE)
+            if (score <= alpha)
                 score = prev_score;
             break;
         }
