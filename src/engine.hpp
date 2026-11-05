@@ -9,7 +9,7 @@
 constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
 constexpr int PROMO_ORDERING_VAL    = 30000;
-constexpr int CAPTURE_ORDERING_VAL  = 15000;
+constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
 
