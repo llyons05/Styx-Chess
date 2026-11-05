@@ -369,8 +369,23 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             continue;
         }
 
+        Depth reduction = 0;
+        if (moves_tried > 3
+         && !in_check(board, board.stm(), stack+1)) {
+            reduction = 1;
+            if (moves_tried > 6)
+                reduction = depth / 3;
+        }
+
         moves_tried++;
-        Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
+        Depth new_depth = depth - 1 - reduction;
+        Score val = -search(board, stack+1, -beta, -alpha, new_depth);
+
+        if ((val > alpha) && (reduction != 0)) {
+            new_depth = depth-1;
+            val = -search(board, stack+1, -beta, -alpha, new_depth);
+        }
+
         undo_move(board, stack, m);
 
         if (search_cancelled)
