@@ -429,7 +429,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!m.is_capture() && !m.is_promo()) { // if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) This worked
+        if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) {
             undo_move(board, stack, m);
             continue;
         }
