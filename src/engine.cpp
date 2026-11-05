@@ -25,6 +25,14 @@ void Engine::new_game() {
     start_time = 0;
     best_move = Move();
     tt.clear();
+    for (int i = 0; i <= MAX_PLY; i++) {
+        killer_moves[i][0] = Move();
+        killer_moves[i][1] = Move();
+    }
+    for (eColor c = WHITE; c < NUM_COLORS; c++)
+        for (int i = 0; i < 64; i++)
+            for (int j = 0; j < 64; j++)
+                history_table[c][i][j] = 0;
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
