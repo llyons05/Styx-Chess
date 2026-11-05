@@ -25,6 +25,14 @@ void Engine::new_game() {
     start_time = 0;
     best_move = Move();
     tt.clear();
+    for (int i = 0; i <= MAX_PLY; i++) {
+        killer_moves[i][0] = Move();
+        killer_moves[i][1] = Move();
+    }
+    for (eColor c = WHITE; c < NUM_COLORS; c++)
+        for (int i = 0; i < 64; i++)
+            for (int j = 0; j < 64; j++)
+                history_table[c][i][j] = 0;
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
@@ -73,15 +81,19 @@ void Engine::update_stack(const Board& board, Search_Stack* stack) {
     stack->state_info = board.bbs.state_info();
 }
 
-void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
-    constexpr int sorting_vals[NUM_PIECE_TYPES+1] = {mat_val(PAWN), mat_val(BISHOP), mat_val(KNIGHT), mat_val(ROOK), mat_val(QUEEN), mat_val(QUEEN)+1, 0};
+void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
     BB64 opp_threats = stack->threats[!board.stm()];
     for (std::size_t i = 0; i < mg.movelist.size(); i++) {
         Move& move = mg[i];
         if (move.is_capture()) {
-            move.score = CAPTURE_ORDERING_VAL/2 + sorting_vals[move.piece_captured] - move.piece_from;
-            if ((sorting_vals[move.piece_from] <= sorting_vals[move.piece_captured]) || (opp_threats & move.to).empty())
-                move.score += CAPTURE_ORDERING_VAL/2;
+            Score see = mat_val(move.piece_captured);
+            if (opp_threats.filled(move.to))
+                see = static_exchange_eval(board, move);
+
+            if (see < -50)
+                move.score = -CAPTURE_ORDERING_VAL + see - move.piece_from;
+            else
+                move.score = CAPTURE_ORDERING_VAL + see - move.piece_from;
         }
 
         if (move.is_promo()) {
@@ -90,6 +102,9 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
 
         if (move.id == tt_move_id)
             move.score = TT_ORDERING_VAL;
+        
+        if (move.score != 0)
+            continue;
 
         if (move.score < KILLER_ORDERING_VAL) {
             if (move == killer_moves[stack->ply][0])
@@ -100,6 +115,55 @@ void Engine::set_movescores(const Board& board, Move_Generator& mg, Search_Stack
         if (move.score < KILLER_ORDERING_VAL-1)
             move.score = history_table[board.stm()][move.from][move.to];
     }
+}
+
+eSquare least_val_attacker(const BB64 bbs[NUM_COLORS], BB64 attackers) {
+    for (ePieceType p = PAWN; p < NUM_PIECE_TYPES; p++) {
+        if (bbs[p] & attackers)
+            return (bbs[p] & attackers).lsb();
+    }
+    return NULL_SQUARE;
+}
+
+Score Engine::static_exchange_eval(const Board& board, const Move& move) {
+    if (move.piece_from == KING)
+        return -mat_val(KING);
+
+    Score gain[32]{};
+    int d = 0;
+    gain[d] = mat_val(move.piece_captured);
+    BB64 occupied = board.bbs.all() & ~BB64(move.from);
+    BB64 attacks_to = Move_Generator::attacks_to(board.bbs.piece_bbs, occupied, move.to);
+    BB64 causes_xray = (board.bbs[WHITE] ^ board.bbs[WHITE, KING] ^ board.bbs[WHITE, KNIGHT]) | (board.bbs[BLACK] ^ board.bbs[BLACK, KING] ^ board.bbs[BLACK, KNIGHT]);
+    eColor curr_color = board.stm();
+    eSquare curr_attacker = move.from;
+    do {
+        d++;
+        assert(d < 32);
+        ePieceType pt = board.bbs.piece_at(curr_attacker).pt;
+        curr_color = !curr_color;
+        gain[d] = mat_val(pt) - gain[d-1];
+        attacks_to &= ~BB64(curr_attacker);
+        occupied &= ~BB64(curr_attacker);
+        if (causes_xray.filled(curr_attacker))
+            attacks_to = Move_Generator::attacks_to(board.bbs.piece_bbs, occupied, move.to);
+
+        if ((attacks_to != 0) && pt == KING) {
+            d++;
+            break;
+        }
+        curr_attacker = least_val_attacker(board.bbs.piece_bbs[curr_color], attacks_to);
+
+        if (std::max(-gain[d-1], gain[d]) < 0) {
+            if (curr_attacker != NULL_SQUARE)
+                d++;
+            break;
+        }
+    } while (curr_attacker < NULL_SQUARE);
+
+    while (--d)
+        gain[d-1] = -std::max(-gain[d-1], gain[d]);
+    return gain[0];
 }
 
 void Engine::set_killers(const Move& move, Search_Stack* stack) {
@@ -135,9 +199,7 @@ Score Engine::search_iterate(Board& board) {
     UCI_Command::info(nodes_traversed, 1, start_time, final_val, tt.hashfull());
 
     while (((abs(final_val) < MAX_SCORE - current_depth)) && !search_cancelled && (current_depth < MAX_PLY)) {
-        Score temp_val = search_widen(board, root_mg, stack, current_depth, final_val);
-        if (!search_cancelled)
-            final_val = temp_val;
+        final_val = search_widen(board, root_mg, stack, current_depth, final_val);
         UCI_Command::info(nodes_traversed, current_depth, start_time, final_val, tt.hashfull());
         current_depth++;
     }
@@ -154,7 +216,7 @@ Score Engine::search_widen(Board& board, Move_Generator& root_mg, Search_Stack* 
     while (true) {
         score = search_root(board, root_mg, stack, alpha, beta, depth);
         if (search_cancelled) {
-            if (score <= -INF_SCORE)
+            if (score <= alpha)
                 score = prev_score;
             break;
         }
@@ -375,7 +437,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!m.is_capture() && !m.is_promo()) {
+        if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) {
             undo_move(board, stack, m);
             continue;
         }

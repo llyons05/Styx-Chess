@@ -94,6 +94,14 @@ public:
         bb |= other.bb;
         return *this;
     }
+
+    constexpr BB64 operator^(const BB64& other) const {
+        return BB64(bb ^ other.bb);
+    }
+    constexpr BB64 operator^=(const BB64 other) {
+        bb ^= other.bb;
+        return *this;
+    }
     
     constexpr BB64 operator<<(U8 shift) const {
         return BB64(bb << shift);
@@ -241,16 +249,16 @@ constexpr BB64 COLS[8] = {72340172838076673ULL, 72340172838076673ULL << 1, 72340
 const BB64 STARTING_PIECE_POSITIONS[NUM_COLORS][NUM_PIECE_TYPES] = {
     {
         BB64(A2) | BB64(B2) | BB64(C2) | BB64(D2) | BB64(E2) | BB64(F2) | BB64(G2) | BB64(H2),
-        BB64(C1) | BB64(F1),
         BB64(B1) | BB64(G1),
+        BB64(C1) | BB64(F1),
         BB64(A1) | BB64(H1),
         BB64(D1),
         BB64(E1)
     },
     {
         BB64(A7) | BB64(B7) | BB64(C7) | BB64(D7) | BB64(E7) | BB64(F7) | BB64(G7) | BB64(H7),
-        BB64(C8) | BB64(F8),
         BB64(B8) | BB64(G8),
+        BB64(C8) | BB64(F8),
         BB64(A8) | BB64(H8),
         BB64(D8),
         BB64(E8)

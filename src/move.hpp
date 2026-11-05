@@ -85,7 +85,7 @@ public:
     std::string long_alg() const {
         std::string result = square_str(from) + square_str(to);
         if (is_promo())
-            result += " bnrqk"[piece_to];
+            result += " nbrqk"[piece_to];
         return result;
     }
     
@@ -95,9 +95,9 @@ public:
         else if (m.is_castle() && (m.to == C1 || m.to == C8))
             os << "O-O-O";
         else
-            os << " BNRQK"[m.piece_from] << square_str(m.from) << (m.is_capture() ? 'x' : '-') << square_str(m.to);
+            os << " NBRQK"[m.piece_from] << square_str(m.from) << (m.is_capture() ? 'x' : '-') << square_str(m.to);
         if (m.is_promo())
-            os << "=" << " BNRQK"[m.piece_to];
+            os << "=" << " NBRQK"[m.piece_to];
         return os;
     }
 };

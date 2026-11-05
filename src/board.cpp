@@ -36,7 +36,7 @@ bool Board::is_draw() {
 }
 
 void Board::print() const {
-    const char piece_chars[2][8] = {{'P', 'B', 'N', 'R', 'Q', 'K', '-', '-'}, {'p', 'b', 'n', 'r', 'q', 'k', '-', '-'}};
+    const char piece_chars[2][8] = {{'P', 'N', 'B', 'R', 'Q', 'K', '-', '-'}, {'p', 'n', 'b', 'r', 'q', 'k', '-', '-'}};
     
     for (int row = 7; row >= 0; row--) {
         std::cout << "   " << (char)('1' + row) << "\t";
