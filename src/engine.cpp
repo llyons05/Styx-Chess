@@ -404,8 +404,11 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
-                if (!m.is_capture() && !m.is_promo())
+                if (!m.is_capture() && !m.is_promo()) {
                     history_table[board.stm()][m.from][m.to] << depth*depth;
+                    for (size_t j = 0; j < i; j++)
+                        history_table[board.stm()][mg[j].from][mg[j].to] << -depth*depth;
+                }
 
                 break;
             }
