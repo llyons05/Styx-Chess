@@ -369,18 +369,20 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             continue;
         }
 
-        Depth reduction = 0;
+        stack->reduction = 0;
         if ((moves_tried > 2)
          && (m.score < KILLER_ORDERING_VAL-1)
          && !in_check(board, board.stm(), stack+1)) {
-            reduction = (moves_tried > 5) ? depth/3 : 1;
+            stack->reduction = (moves_tried > 5) ? depth/3 : 1;
+            if (flag_in_check) stack->reduction--;
+            stack->reduction = std::clamp(stack->reduction, 0, depth);
         }
 
         moves_tried++;
-        Depth new_depth = depth - 1 - reduction;
+        Depth new_depth = depth - 1 - stack->reduction;
         Score val = -search(board, stack+1, -beta, -alpha, new_depth);
 
-        if ((val > alpha) && (reduction != 0)) {
+        if ((val > alpha) && (stack->reduction != 0)) {
             new_depth = depth-1;
             val = -search(board, stack+1, -beta, -alpha, new_depth);
         }
