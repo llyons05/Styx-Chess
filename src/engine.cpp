@@ -2,6 +2,14 @@
 
 #include "uci.hpp"
 
+#include <math.h>
+
+const std::array<int, MAX_MOVES> reductions = [] {
+    std::array<int, MAX_MOVES> table{};
+    for (size_t i = 1; i < table.size(); ++i)
+        table[i] = int(512 * sqrt(float(i)));
+    return table;
+}();
 
 Engine& Engine::operator=(Engine&& other) {
     if (this != &other) {
@@ -371,16 +379,16 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
         stack->reduction = 0;
         if ((depth >= 2)
-         && (moves_tried > 2)) {
-            int r = depth*350 + moves_tried*128 - (flag_in_check + in_check(board, board.stm(), stack+1))*1024;
-            if (m.score >= KILLER_ORDERING_VAL-1)
-                r -= 1024;
-            else {
-                if (m.is_capture())
-                    r -= 512;
-                else
-                    r -= m.score / 4; 
-            }
+         && (moves_tried > 2)
+         && (m.score < KILLER_ORDERING_VAL-1)
+         && !in_check(board, board.stm(), stack+1)) {
+            int r = reductions[depth-1] + reductions[moves_tried-1];
+            if (flag_in_check)
+                r -= 2048;
+            if (m.is_capture())
+                r -= mat_val(m.piece_captured)*8;
+            else
+                r -= m.score/2;
             stack->reduction = std::clamp(r/1024, 0, depth);
         }
 
