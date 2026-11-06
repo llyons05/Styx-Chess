@@ -370,12 +370,18 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         }
 
         stack->reduction = 0;
-        if ((moves_tried > 2)
-         && (m.score < KILLER_ORDERING_VAL-1)
-         && !in_check(board, board.stm(), stack+1)) {
-            stack->reduction = (moves_tried > 5) ? depth/3 : 1;
-            if (flag_in_check) stack->reduction--;
-            stack->reduction = std::clamp(stack->reduction, 0, depth);
+        if ((depth >= 2)
+         && (moves_tried > 2)) {
+            int r = depth*350 + moves_tried*128 - (flag_in_check + in_check(board, board.stm(), stack+1))*1024;
+            if (m.score >= KILLER_ORDERING_VAL-1)
+                r -= 1024;
+            else {
+                if (m.is_capture())
+                    r -= 512;
+                else
+                    r -= m.score / 4; 
+            }
+            stack->reduction = std::clamp(r/1024, 0, depth);
         }
 
         moves_tried++;
