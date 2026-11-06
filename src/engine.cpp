@@ -370,11 +370,10 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         }
 
         Depth reduction = 0;
-        if (moves_tried > 3
+        if ((moves_tried > 2)
+         && (m.score < KILLER_ORDERING_VAL-1)
          && !in_check(board, board.stm(), stack+1)) {
-            reduction = 1;
-            if (moves_tried > 6)
-                reduction = depth / 3;
+            reduction = (moves_tried > 5) ? depth/3 : 1;
         }
 
         moves_tried++;
