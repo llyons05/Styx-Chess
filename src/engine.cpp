@@ -379,7 +379,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
         stack->reduction = 0;
         if ((depth >= 2)
-         && (moves_tried > 2)
+         && (moves_tried > 3)
          && (m.score < KILLER_ORDERING_VAL-1)
          && !in_check(board, board.stm(), stack+1)
          && !flag_in_check) {
