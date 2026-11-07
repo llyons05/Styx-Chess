@@ -415,7 +415,8 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
                 if (!m.is_capture() && !m.is_promo()) {
                     history_table[board.stm()][m.from][m.to] << depth*depth;
                     for (size_t j = 0; j < i; j++)
-                        history_table[board.stm()][mg[j].from][mg[j].to] << -depth*depth;
+                        if (!(mg[j].is_capture() || mg[j].is_promo()))
+                            history_table[board.stm()][mg[j].from][mg[j].to] << -depth*depth;
                 }
 
                 break;
