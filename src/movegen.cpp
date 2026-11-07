@@ -339,6 +339,8 @@ void init_magics() {
 
 template std::vector<Move>& Move_Generator::gen_moves<WHITE>();
 template std::vector<Move>& Move_Generator::gen_moves<BLACK>();
+template BB64 Move_Generator::pawn_attacks<WHITE>(BB64 pawns);
+template BB64 Move_Generator::pawn_attacks<BLACK>(BB64 pawns);
 
 template class Magic_Table<BISHOP>;
 template class Magic_Table<ROOK>;
