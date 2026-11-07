@@ -381,10 +381,9 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         if ((depth >= 2)
          && (moves_tried > 2)
          && (m.score < KILLER_ORDERING_VAL-1)
-         && !in_check(board, board.stm(), stack+1)) {
+         && !in_check(board, board.stm(), stack+1)
+         && !flag_in_check) {
             int r = reductions[depth-1] + reductions[moves_tried-1];
-            if (flag_in_check)
-                r -= 2048;
             if (m.is_capture())
                 r -= mat_val(m.piece_captured)*8;
             else
