@@ -2,6 +2,14 @@
 
 #include "uci.hpp"
 
+#include <math.h>
+
+const std::array<int, MAX_MOVES> reductions = [] {
+    std::array<int, MAX_MOVES> table{};
+    for (size_t i = 1; i < table.size(); ++i)
+        table[i] = int(512 * sqrt(float(i)));
+    return table;
+}();
 
 Engine& Engine::operator=(Engine&& other) {
     if (this != &other) {
@@ -369,8 +377,29 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             continue;
         }
 
+        stack->reduction = 0;
+        if ((depth >= 2)
+         && (moves_tried > 3)
+         && (m.score < KILLER_ORDERING_VAL-1)
+         && !in_check(board, board.stm(), stack+1)
+         && !flag_in_check) {
+            int r = reductions[depth-1] + reductions[moves_tried-1];
+            if (m.is_capture())
+                r -= mat_val(m.piece_captured)*8;
+            else
+                r -= m.score/2;
+            stack->reduction = std::clamp(r/1024, 0, depth);
+        }
+
         moves_tried++;
-        Score val = -search(board, stack+1, -beta, -alpha, depth - 1);
+        Depth new_depth = depth - 1 - stack->reduction;
+        Score val = -search(board, stack+1, -beta, -alpha, new_depth);
+
+        if ((val > alpha) && (stack->reduction != 0)) {
+            new_depth = depth-1;
+            val = -search(board, stack+1, -beta, -alpha, new_depth);
+        }
+
         undo_move(board, stack, m);
 
         if (search_cancelled)
@@ -382,8 +411,12 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
-                if (!m.is_capture() && !m.is_promo())
+                if (!m.is_capture() && !m.is_promo()) {
                     history_table[board.stm()][m.from][m.to] << depth*depth;
+                    for (size_t j = 0; j < i; j++)
+                        if (!(mg[j].is_capture() || mg[j].is_promo()))
+                            history_table[board.stm()][mg[j].from][mg[j].to] << -depth*depth;
+                }
 
                 break;
             }
