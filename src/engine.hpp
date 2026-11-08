@@ -18,7 +18,8 @@ struct Eval_Data {
     Score midgame_score = 0;
     Score endgame_score = 0;
     Score game_phase = 0;
-    Score mobility[NUM_COLORS]{};
+    Score midgame_mobility[NUM_COLORS]{};
+    Score endgame_mobility[NUM_COLORS]{};
     BB64 hanging_pieces[NUM_COLORS]{};
     BB64 weaker_attacks[NUM_COLORS][NUM_PIECE_TYPES]{}; // The squares that are attacked by pieces of lower value than the index piece
 
@@ -29,7 +30,8 @@ struct Eval_Data {
         game_phase = 0;
 
         for (int c = 0; c < NUM_COLORS; c++) {
-            mobility[c] = 0;
+            midgame_mobility[c] = 0;
+            endgame_mobility[c] = 0;
             hanging_pieces[c] = 0;
             for (int pt = 0; pt < NUM_PIECE_TYPES; pt++)
                 weaker_attacks[c][pt] = 0;
@@ -93,6 +95,8 @@ private:
     void queen_eval(const Board& board, Search_Stack* stack);
     void king_eval(const Board& board, Search_Stack* stack);
     Score king_shield(const Board& board);
+    Score attack_score(const Board& board, Search_Stack* stack);
+    Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
