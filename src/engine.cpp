@@ -499,72 +499,113 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
 }
 
 Score Engine::eval(const Board& board, Search_Stack* stack) {
-    Score result = 0;
-    int game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
-                   + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
-    game_phase = std::min(24, game_phase);
-    int midgame_weight = game_phase;
-    int endgame_weight = 24 - game_phase;
+    Eval_Data& e = stack->eval_data;
+    e.reset();
+    e.game_phase = board.bbs.piece_counts[WHITE][BISHOP] + board.bbs.piece_counts[WHITE][KNIGHT] + 2*board.bbs.piece_counts[WHITE][ROOK] + 4*board.bbs.piece_counts[WHITE][QUEEN]
+                 + board.bbs.piece_counts[BLACK][BISHOP] + board.bbs.piece_counts[BLACK][KNIGHT] + 2*board.bbs.piece_counts[BLACK][ROOK] + 4*board.bbs.piece_counts[BLACK][QUEEN];
+    e.game_phase = std::min(24, e.game_phase);
+    int midgame_weight = e.game_phase;
+    int endgame_weight = 24 - e.game_phase;
 
-    Score white_mat = board.bbs.material[WHITE];
-    Score black_mat = board.bbs.material[BLACK];
+    e.hanging_pieces[WHITE] = (stack->threats[BLACK] & ~stack->threats[WHITE]) & board.bbs[WHITE];
+    e.hanging_pieces[BLACK] = (stack->threats[WHITE] & ~stack->threats[BLACK]) & board.bbs[BLACK];
 
-    Score knight_score = ((board.bbs[BLACK, KNIGHT] & edges).bitcount() - (board.bbs[WHITE, KNIGHT] & edges).bitcount()) * 10;
+    e.final_score += board.bbs.material[WHITE] - board.bbs.material[BLACK];
+    e.midgame_score += ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
+                     + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
-    Score center_score = ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
-                       + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
+    pawn_eval(board, stack);
+    king_eval(board, stack);
+    attack_score(board, stack);
 
-    Score midgame_pawn_score = midgame_pawn_eval(board);
-    Score endgame_pawn_score = endgame_pawn_eval(board);
-    Score king_safety_score = (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
-
-    BB64 white_attacks = stack->threats[WHITE] & ~board.bbs[WHITE];
-    BB64 black_attacks = stack->threats[BLACK] & ~board.bbs[BLACK];
-    Score attack_score = (white_attacks.bitcount() - black_attacks.bitcount()) * 4;
-    Score threat_score = ((white_attacks & board.bbs[BLACK]).bitcount() - (black_attacks & board.bbs[WHITE]).bitcount()) * 8;
-    Score hanging_score = hanging_pieces_eval(board, stack);
-
-    result += white_mat - black_mat;
-    result += threat_score + attack_score + hanging_score + knight_score;
-
-    Score midgame_score = center_score + midgame_pawn_score + king_safety_score;
-    Score endgame_score = endgame_pawn_score;
-
-    result += ((midgame_score * midgame_weight) + (endgame_score * endgame_weight)) / 24;
+    e.final_score += ((e.midgame_score * midgame_weight) + (e.endgame_score * endgame_weight)) / 24;
+    e.final_score += hanging_pieces_eval(board, stack);
 
     if (!board.bbs.has_mating_material(WHITE))
-        result = std::min(0, result);
+        e.final_score = std::min(0, e.final_score);
     if (!board.bbs.has_mating_material(BLACK))
-        result = std::max(0, result);
+        e.final_score = std::max(0, e.final_score);
 
     if (board.stm() == BLACK)
-        return -result;
-    return result;
+        e.final_score *= -1;
+
+    return e.final_score;
 }
 
+void Engine::attack_score(const Board& board, Search_Stack* stack) {
+    BB64 piece_attacks[NUM_COLORS][NUM_PIECE_TYPES]{};
+    piece_attacks[WHITE][PAWN]   = Move_Generator::pawn_attacks<WHITE>(board.bbs[WHITE, PAWN]);
+    piece_attacks[WHITE][KNIGHT] = Move_Generator::knight_attacks(board.bbs[WHITE, KNIGHT]);
+    piece_attacks[WHITE][BISHOP] = Move_Generator::bishop_attacks(board.bbs[WHITE, BISHOP], board.bbs.all());
+    piece_attacks[WHITE][ROOK]   = Move_Generator::rook_attacks(board.bbs[WHITE, ROOK], board.bbs.all());
+    piece_attacks[WHITE][QUEEN]  = Move_Generator::queen_attacks(board.bbs[WHITE, QUEEN], board.bbs.all());
 
-Score Engine::endgame_pawn_eval(const Board& board) {
-    Score result = 0;
+    piece_attacks[BLACK][PAWN]   = Move_Generator::pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
+    piece_attacks[BLACK][KNIGHT] = Move_Generator::knight_attacks(board.bbs[BLACK, KNIGHT]);
+    piece_attacks[BLACK][BISHOP] = Move_Generator::bishop_attacks(board.bbs[BLACK, BISHOP], board.bbs.all());
+    piece_attacks[BLACK][ROOK]   = Move_Generator::rook_attacks(board.bbs[BLACK, ROOK], board.bbs.all());
+    piece_attacks[BLACK][QUEEN]  = Move_Generator::queen_attacks(board.bbs[BLACK, QUEEN], board.bbs.all());
+
+    constexpr Score midgame_mobility_value[NUM_PIECE_TYPES] = {2, 4, 3, 3, 1, 0};
+    constexpr Score endgame_mobility_value[NUM_PIECE_TYPES] = {2, 3, 3, 3, 2, 0};
+    constexpr Score tropism_value[NUM_PIECE_TYPES]          = {5, 4, 4, 5, 6, 0};
+    Score pawn_control = piece_attacks[WHITE][PAWN].bitcount() - piece_attacks[BLACK][PAWN].bitcount();
+    Score mid_control_score = pawn_control * midgame_mobility_value[PAWN];
+    Score end_control_score = pawn_control * endgame_mobility_value[PAWN];
+    Score threat_score = 0;
+    for (ePieceType pt = PAWN; pt < KING; pt++) {
+        Score control = 0;
+        if (pt > PAWN)
+            control = (piece_attacks[WHITE][pt] & ~piece_attacks[BLACK][PAWN] & ~board.bbs[WHITE]).bitcount()
+                    - (piece_attacks[BLACK][pt] & ~piece_attacks[WHITE][PAWN] & ~board.bbs[BLACK]).bitcount();
+
+        BB64 white_threatening = piece_attacks[WHITE][pt] & board.bbs[BLACK];
+        BB64 black_threatening = piece_attacks[BLACK][pt] & board.bbs[WHITE];
+        while (white_threatening) {
+            ePieceType threat_pt = board.bbs.piece_at(white_threatening.pop()).pt;
+            threat_score += 1000 + (mat_val(threat_pt) - mat_val(pt));
+        }
+        while (black_threatening) {
+            ePieceType threat_pt = board.bbs.piece_at(black_threatening.pop()).pt;
+            threat_score -= 1000 + (mat_val(threat_pt) - mat_val(pt));
+        }
+
+        mid_control_score += control * midgame_mobility_value[pt];
+        end_control_score += control * endgame_mobility_value[pt];
+        stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[BLACK][KING]).bitcount()
+                                      -  (piece_attacks[BLACK][pt] & piece_attacks[WHITE][KING]).bitcount()) * tropism_value[pt];
+        stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[WHITE][KING]).bitcount()
+                                      -  (piece_attacks[BLACK][pt] & piece_attacks[BLACK][KING]).bitcount()) * 4;
+    }
+    stack->eval_data.midgame_score += mid_control_score * 2;
+    stack->eval_data.endgame_score += end_control_score * 2;
+    stack->eval_data.final_score += threat_score/100;
+}
+
+void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     BB64 white_pawns = board.bbs[WHITE, PAWN];
+    BB64 black_pawns = board.bbs[BLACK, PAWN];
     while (white_pawns) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
         if (row >= 4)
-            result += row - 3;
+            stack->eval_data.endgame_score += (row - 3) * 5;
     }
-    BB64 black_pawns = board.bbs[BLACK, PAWN];
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
         if (row <= 3)
-            result -= 4 - row;
+            stack->eval_data.endgame_score -= (4 - row) * 5;
     }
+}
 
-    return result*5;
+void Engine::king_eval(const Board& board, Search_Stack* stack) {
+    stack->eval_data.midgame_score += (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
+    stack->eval_data.midgame_score += king_shield(board);
 }
 
 
-Score Engine::midgame_pawn_eval(const Board& board) {
+Score Engine::king_shield(const Board& board) {
     Score result = 0;
     BB64 white_pawns = board.bbs[WHITE, PAWN];
     BB64 black_pawns = board.bbs[BLACK, PAWN];
@@ -593,10 +634,9 @@ Score Engine::midgame_pawn_eval(const Board& board) {
     return result;
 }
 
-
 Score Engine::hanging_pieces_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_hanging = (stack->threats[BLACK] & ~stack->threats[WHITE]) & board.bbs[WHITE];
-    BB64 black_hanging = (stack->threats[WHITE] & ~stack->threats[BLACK]) & board.bbs[BLACK];
+    BB64 white_hanging = stack->eval_data.hanging_pieces[WHITE];
+    BB64 black_hanging = stack->eval_data.hanging_pieces[BLACK];
 
     Score white_scalar = board.stm() == WHITE ? (white_hanging.bitcount() > 1 ? 8 : 16) : 4;
     Score black_scalar = board.stm() == BLACK ? (black_hanging.bitcount() > 1 ? 8 : 16) : 4;

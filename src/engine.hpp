@@ -13,11 +13,31 @@ constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
 
+struct Eval_Data {
+    Score final_score = 0;
+    Score midgame_score = 0;
+    Score endgame_score = 0;
+    Score game_phase = 0;
+    BB64 hanging_pieces[NUM_COLORS]{};
+
+    void reset() {
+        final_score = 0;
+        midgame_score = 0;
+        endgame_score = 0;
+        game_phase = 0;
+
+        for (int c = 0; c < NUM_COLORS; c++) {
+            hanging_pieces[c] = 0;
+        }
+    }
+};
+
 struct Search_Stack {
     int ply = 0;
     Depth reduction = 0;
     Move current_move = Move();
     BB_State_Info state_info;
+    Eval_Data eval_data;
 
     BB64 threats[NUM_COLORS]{};
 };
@@ -59,10 +79,13 @@ private:
     void undo_move(Board& board, Search_Stack* stack, const Move& move);
     
     Score eval(const Board& board, Search_Stack* stack);
-    Score endgame_pawn_eval(const Board& board);
-    Score midgame_pawn_eval(const Board& board);
-    Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
     Score static_exchange_eval(const Board& board, const Move& move);
+
+    void pawn_eval(const Board& board, Search_Stack* stack);
+    void king_eval(const Board& board, Search_Stack* stack);
+    Score king_shield(const Board& board);
+    void attack_score(const Board& board, Search_Stack* stack);
+    Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
 
     inline void set_search_cancelled() {
         if ((nodes_traversed & 4095) == 0)
