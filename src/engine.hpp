@@ -21,7 +21,6 @@ struct Eval_Data {
     Score midgame_mobility[NUM_COLORS]{};
     Score endgame_mobility[NUM_COLORS]{};
     BB64 hanging_pieces[NUM_COLORS]{};
-    BB64 weaker_attacks[NUM_COLORS][NUM_PIECE_TYPES]{}; // The squares that are attacked by pieces of lower value than the index piece
 
     void reset() {
         final_score = 0;
@@ -33,8 +32,6 @@ struct Eval_Data {
             midgame_mobility[c] = 0;
             endgame_mobility[c] = 0;
             hanging_pieces[c] = 0;
-            for (int pt = 0; pt < NUM_PIECE_TYPES; pt++)
-                weaker_attacks[c][pt] = 0;
         }
     }
 };
@@ -89,13 +86,9 @@ private:
     Score static_exchange_eval(const Board& board, const Move& move);
 
     void pawn_eval(const Board& board, Search_Stack* stack);
-    void knight_eval(const Board& board, Search_Stack* stack);
-    void bishop_eval(const Board& board, Search_Stack* stack);
-    void rook_eval(const Board& board, Search_Stack* stack);
-    void queen_eval(const Board& board, Search_Stack* stack);
     void king_eval(const Board& board, Search_Stack* stack);
     Score king_shield(const Board& board);
-    Score attack_score(const Board& board, Search_Stack* stack);
+    void attack_score(const Board& board, Search_Stack* stack);
     Score hanging_pieces_eval(const Board& board, Search_Stack* stack);
 
     inline void set_search_cancelled() {

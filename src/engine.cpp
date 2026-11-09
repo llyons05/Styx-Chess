@@ -520,12 +520,13 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
     // rook_eval(board, stack);
     // queen_eval(board, stack);
     king_eval(board, stack);
+    attack_score(board, stack);
 
     // e.midgame_score += e.midgame_mobility[WHITE] - e.midgame_mobility[BLACK];
     // e.endgame_score += e.endgame_mobility[WHITE] - e.endgame_mobility[BLACK];
 
     e.final_score += ((e.midgame_score * midgame_weight) + (e.endgame_score * endgame_weight)) / 24;
-    e.final_score += hanging_pieces_eval(board, stack) + attack_score(board, stack);
+    e.final_score += hanging_pieces_eval(board, stack);
 
     if (!board.bbs.has_mating_material(WHITE))
         e.final_score = std::min(0, e.final_score);
@@ -569,144 +570,62 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
         if (row <= 3)
             stack->eval_data.endgame_score -= 4 - row;
     }
-
-    // stack->eval_data.weaker_attacks[WHITE][KNIGHT] = white_pawn_attacks;
-    // stack->eval_data.weaker_attacks[BLACK][KNIGHT] = black_pawn_attacks;
-    // stack->eval_data.weaker_attacks[WHITE][BISHOP] = white_pawn_attacks;
-    // stack->eval_data.weaker_attacks[BLACK][BISHOP] = black_pawn_attacks;
 }
 
 
-Score Engine::attack_score(const Board& board, Search_Stack* stack) {
-    BB64 white_pawn_attacks = Move_Generator::pawn_attacks<WHITE>(board.bbs[WHITE, PAWN]);
-    BB64 black_pawn_attacks = Move_Generator::pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
-    BB64 white_knight_attacks = Move_Generator::knight_attacks(board.bbs[WHITE, KNIGHT]);
-    BB64 black_knight_attacks = Move_Generator::knight_attacks(board.bbs[BLACK, KNIGHT]);
-    BB64 white_bishop_attacks = Move_Generator::bishop_attacks(board.bbs[WHITE, BISHOP], board.bbs.all());
-    BB64 black_bishop_attacks = Move_Generator::bishop_attacks(board.bbs[BLACK, BISHOP], board.bbs.all());
-    BB64 white_rook_attacks = Move_Generator::rook_attacks(board.bbs[WHITE, ROOK], board.bbs.all());
-    BB64 black_rook_attacks = Move_Generator::rook_attacks(board.bbs[BLACK, ROOK], board.bbs.all());
-    BB64 white_queen_attacks = Move_Generator::queen_attacks(board.bbs[WHITE, QUEEN], board.bbs.all());
-    BB64 black_queen_attacks = Move_Generator::queen_attacks(board.bbs[BLACK, QUEEN], board.bbs.all());
+void Engine::attack_score(const Board& board, Search_Stack* stack) {
+    BB64 piece_attacks[NUM_COLORS][NUM_PIECE_TYPES]{};
+    piece_attacks[WHITE][PAWN]   = Move_Generator::pawn_attacks<WHITE>(board.bbs[WHITE, PAWN]);
+    piece_attacks[WHITE][KNIGHT] = Move_Generator::knight_attacks(board.bbs[WHITE, KNIGHT]);
+    piece_attacks[WHITE][BISHOP] = Move_Generator::bishop_attacks(board.bbs[WHITE, BISHOP], board.bbs.all());
+    piece_attacks[WHITE][ROOK]   = Move_Generator::rook_attacks(board.bbs[WHITE, ROOK], board.bbs.all());
+    piece_attacks[WHITE][QUEEN]  = Move_Generator::queen_attacks(board.bbs[WHITE, QUEEN], board.bbs.all());
 
-    Score control_score = ((white_pawn_attacks).bitcount() - (black_pawn_attacks).bitcount()) * 2;
-    control_score      += ((white_knight_attacks & ~black_pawn_attacks & ~board.bbs[WHITE]).bitcount() - (black_knight_attacks & ~white_pawn_attacks & ~board.bbs[BLACK]).bitcount()) * 4;
-    control_score      += ((white_bishop_attacks & ~black_pawn_attacks & ~board.bbs[WHITE]).bitcount() - (black_bishop_attacks & ~white_pawn_attacks & ~board.bbs[BLACK]).bitcount()) * 3;
-    control_score      += ((white_rook_attacks & ~black_pawn_attacks & ~board.bbs[WHITE]).bitcount() - (black_rook_attacks & ~white_pawn_attacks & ~board.bbs[BLACK]).bitcount()) * 3;
-    control_score      += ((white_queen_attacks & ~black_pawn_attacks & ~board.bbs[WHITE]).bitcount() - (black_queen_attacks & ~white_pawn_attacks & ~board.bbs[BLACK]).bitcount());
-    
-    Score threat_score = (stack->threats[WHITE] & board.bbs[BLACK]).bitcount() - (stack->threats[BLACK] & board.bbs[WHITE]).bitcount();
+    // weaker_attacks[WHITE][KNIGHT]  = piece_attacks[WHITE][PAWN];
+    // weaker_attacks[WHITE][BISHOP]  = piece_attacks[WHITE][PAWN];
+    // weaker_attacks[WHITE][ROOK]    = piece_attacks[WHITE][KNIGHT] | piece_attacks[WHITE][BISHOP] | piece_attacks[WHITE][PAWN];
+    // weaker_attacks[WHITE][QUEEN]   = weaker_attacks[WHITE][ROOK] | piece_attacks[WHITE][ROOK];
 
-    return control_score*2 + threat_score*8;
-}
+    piece_attacks[BLACK][PAWN]   = Move_Generator::pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
+    piece_attacks[BLACK][KNIGHT] = Move_Generator::knight_attacks(board.bbs[BLACK, KNIGHT]);
+    piece_attacks[BLACK][BISHOP] = Move_Generator::bishop_attacks(board.bbs[BLACK, BISHOP], board.bbs.all());
+    piece_attacks[BLACK][ROOK]   = Move_Generator::rook_attacks(board.bbs[BLACK, ROOK], board.bbs.all());
+    piece_attacks[BLACK][QUEEN]  = Move_Generator::queen_attacks(board.bbs[BLACK, QUEEN], board.bbs.all());
 
-void Engine::knight_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_knights = board.bbs[WHITE, KNIGHT];
-    BB64 black_knights = board.bbs[BLACK, KNIGHT];
-    BB64 white_knight_attacks = Move_Generator::knight_attacks(white_knights);
-    BB64 black_knight_attacks = Move_Generator::knight_attacks(black_knights);
+    // weaker_attacks[BLACK][KNIGHT]  = piece_attacks[BLACK][PAWN];
+    // weaker_attacks[BLACK][BISHOP]  = piece_attacks[BLACK][PAWN];
+    // weaker_attacks[BLACK][ROOK]    = piece_attacks[BLACK][KNIGHT] | piece_attacks[BLACK][BISHOP] | piece_attacks[BLACK][PAWN];
+    // weaker_attacks[BLACK][QUEEN]   = weaker_attacks[BLACK][ROOK] | piece_attacks[BLACK][ROOK];
 
-    // stack->eval_data.mobility[WHITE] += 4 * ((white_knight_attacks & ~board.bbs[WHITE]).bitcount() - 4);
-    // stack->eval_data.mobility[BLACK] += 4 * ((black_knight_attacks & ~board.bbs[BLACK]).bitcount() - 4);
-    // stack->eval_data.final_score += ((white_knight_attacks & board.bbs[BLACK]).bitcount() - (black_knight_attacks & board.bbs[WHITE]).bitcount()) * 3;
+    constexpr Score midgame_mobility_value[NUM_PIECE_TYPES] = {2, 4, 3, 3, 1, 0};
+    constexpr Score endgame_mobility_value[NUM_PIECE_TYPES] = {2, 3, 3, 3, 2, 0};
+    Score pawn_control = piece_attacks[WHITE][PAWN].bitcount() - piece_attacks[BLACK][PAWN].bitcount();
+    Score mid_control_score = pawn_control * midgame_mobility_value[PAWN];
+    Score end_control_score = pawn_control * endgame_mobility_value[PAWN];
+    Score threat_score = 0;
+    for (ePieceType pt = PAWN; pt < KING; pt++) {
+        Score control = 0;
+        if (pt > PAWN)
+            control = (piece_attacks[WHITE][pt] & ~piece_attacks[BLACK][PAWN] & ~board.bbs[WHITE]).bitcount()
+                    - (piece_attacks[BLACK][pt] & ~piece_attacks[WHITE][PAWN] & ~board.bbs[BLACK]).bitcount();
 
-    Score white_mobility = (white_knight_attacks & ~board.bbs[WHITE]).bitcount();
-    Score black_mobility = (black_knight_attacks & ~board.bbs[BLACK]).bitcount();
+        BB64 white_threatening = piece_attacks[WHITE][pt] & board.bbs[BLACK];
+        BB64 black_threatening = piece_attacks[BLACK][pt] & board.bbs[WHITE];
+        while (white_threatening) {
+            ePieceType threat_pt = board.bbs.piece_at(white_threatening.pop()).pt;
+            threat_score += 1000 + (mat_val(threat_pt) - mat_val(pt));
+        }
+        while (black_threatening) {
+            ePieceType threat_pt = board.bbs.piece_at(black_threatening.pop()).pt;
+            threat_score -= 1000 + (mat_val(threat_pt) - mat_val(pt));
+        }
 
-    stack->eval_data.midgame_mobility[WHITE] += 4 * white_mobility;
-    stack->eval_data.midgame_mobility[BLACK] += 4 * black_mobility;
-
-    stack->eval_data.endgame_mobility[WHITE] += 2 * white_mobility;
-    stack->eval_data.endgame_mobility[BLACK] += 2 * black_mobility;
-
-    // stack->eval_data.final_score -= ((white_knights & ~stack->eval_data.hanging_pieces[WHITE] & stack->eval_data.weaker_attacks[BLACK][KNIGHT]).bitcount() 
-    //                                - (black_knights & ~stack->eval_data.hanging_pieces[BLACK] & stack->eval_data.weaker_attacks[WHITE][KNIGHT]).bitcount()) * mat_val(KNIGHT)/100;
-    stack->eval_data.final_score -= ((white_knights & stack->threats[BLACK]).bitcount() - (black_knights & stack->threats[WHITE]).bitcount()) * mat_val(KNIGHT)/64;
-    // stack->eval_data.final_score -= ((white_knights & stack->eval_data.hanging_pieces[WHITE]).bitcount() - (black_knights & stack->eval_data.hanging_pieces[BLACK]).bitcount()) * mat_val(KNIGHT)/8;
-
-    stack->eval_data.weaker_attacks[WHITE][ROOK] |= white_knight_attacks | stack->eval_data.weaker_attacks[WHITE][KNIGHT];
-    stack->eval_data.weaker_attacks[BLACK][ROOK] |= black_knight_attacks | stack->eval_data.weaker_attacks[BLACK][KNIGHT];
-}
-
-void Engine::bishop_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_bishops = board.bbs[WHITE, BISHOP];
-    BB64 black_bishops = board.bbs[BLACK, BISHOP];
-    BB64 white_bishop_attacks = Move_Generator::bishop_attacks(white_bishops, board.bbs.all());
-    BB64 black_bishop_attacks = Move_Generator::bishop_attacks(black_bishops, board.bbs.all());
-
-    // stack->eval_data.mobility[WHITE] += 3 * ((white_bishop_attacks & ~board.bbs[WHITE]).bitcount() - 7);
-    // stack->eval_data.mobility[BLACK] += 3 * ((black_bishop_attacks & ~board.bbs[BLACK]).bitcount() - 7);
-    // stack->eval_data.final_score += ((white_bishop_attacks & board.bbs[BLACK]).bitcount() - (black_bishop_attacks & board.bbs[WHITE]).bitcount()) * 2;
-
-    Score white_mobility = (white_bishop_attacks & ~board.bbs[WHITE]).bitcount();
-    Score black_mobility = (black_bishop_attacks & ~board.bbs[BLACK]).bitcount();
-
-    stack->eval_data.midgame_mobility[WHITE] += 4 * white_mobility;
-    stack->eval_data.midgame_mobility[BLACK] += 4 * black_mobility;
-    
-    stack->eval_data.endgame_mobility[WHITE] += 3 * white_mobility;
-    stack->eval_data.endgame_mobility[BLACK] += 3 * black_mobility;
-
-    // stack->eval_data.final_score -= ((white_bishops & ~stack->eval_data.hanging_pieces[WHITE] & stack->eval_data.weaker_attacks[BLACK][BISHOP]).bitcount()
-    //                                - (black_bishops & ~stack->eval_data.hanging_pieces[BLACK] & stack->eval_data.weaker_attacks[WHITE][BISHOP]).bitcount()) * mat_val(BISHOP)/100;
-    stack->eval_data.final_score -= ((white_bishops & stack->threats[BLACK]).bitcount() - (black_bishops & stack->threats[WHITE]).bitcount()) * mat_val(BISHOP)/64;
-    // stack->eval_data.final_score -= ((white_bishops & stack->eval_data.hanging_pieces[WHITE]).bitcount() - (black_bishops & stack->eval_data.hanging_pieces[BLACK]).bitcount()) * mat_val(BISHOP)/8;
-
-    stack->eval_data.weaker_attacks[WHITE][ROOK] |= white_bishop_attacks | stack->eval_data.weaker_attacks[WHITE][BISHOP];
-    stack->eval_data.weaker_attacks[BLACK][ROOK] |= black_bishop_attacks | stack->eval_data.weaker_attacks[BLACK][BISHOP];
-}
-
-void Engine::rook_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_rooks = board.bbs[WHITE, ROOK];
-    BB64 black_rooks = board.bbs[BLACK, ROOK];
-    BB64 white_rook_attacks = Move_Generator::rook_attacks(white_rooks, board.bbs.all());
-    BB64 black_rook_attacks = Move_Generator::rook_attacks(black_rooks, board.bbs.all());
-
-    // stack->eval_data.mobility[WHITE] += 3 * ((white_rook_attacks & ~board.bbs[WHITE]).bitcount() - 7);
-    // stack->eval_data.mobility[BLACK] += 3 * ((black_rook_attacks & ~board.bbs[BLACK]).bitcount() - 7);
-    // stack->eval_data.final_score += ((white_rook_attacks & board.bbs[BLACK]).bitcount() - (black_rook_attacks & board.bbs[WHITE]).bitcount()) * 2;
-
-    Score white_mobility = (white_rook_attacks & ~board.bbs[WHITE]).bitcount();
-    Score black_mobility = (black_rook_attacks & ~board.bbs[BLACK]).bitcount();
-
-    stack->eval_data.midgame_mobility[WHITE] += 2 * white_mobility;
-    stack->eval_data.midgame_mobility[BLACK] += 2 * black_mobility;
-    
-    stack->eval_data.endgame_mobility[WHITE] += 4 * white_mobility;
-    stack->eval_data.endgame_mobility[BLACK] += 4 * black_mobility;
-
-    // stack->eval_data.final_score -= ((white_rooks & ~stack->eval_data.hanging_pieces[WHITE] & stack->eval_data.weaker_attacks[BLACK][ROOK]).bitcount()
-    //                                - (black_rooks & ~stack->eval_data.hanging_pieces[BLACK] & stack->eval_data.weaker_attacks[WHITE][ROOK]).bitcount()) * mat_val(ROOK)/100;
-    stack->eval_data.final_score -= ((white_rooks & stack->threats[BLACK]).bitcount() - (black_rooks & stack->threats[WHITE]).bitcount()) * mat_val(ROOK)/64;
-    // stack->eval_data.final_score -= ((white_rooks & stack->eval_data.hanging_pieces[WHITE]).bitcount() - (black_rooks & stack->eval_data.hanging_pieces[BLACK]).bitcount()) * mat_val(ROOK)/8;
-
-    stack->eval_data.weaker_attacks[WHITE][QUEEN] |= white_rook_attacks | stack->eval_data.weaker_attacks[WHITE][ROOK];
-    stack->eval_data.weaker_attacks[BLACK][QUEEN] |= black_rook_attacks | stack->eval_data.weaker_attacks[BLACK][ROOK];
-}
-
-void Engine::queen_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_queens = board.bbs[WHITE, QUEEN];
-    BB64 black_queens = board.bbs[BLACK, QUEEN];
-    BB64 white_queen_attacks = Move_Generator::queen_attacks(white_queens, board.bbs.all());
-    BB64 black_queen_attacks = Move_Generator::queen_attacks(black_queens, board.bbs.all());
-
-    // stack->eval_data.mobility[WHITE] += 2 * ((white_queen_attacks & ~board.bbs[WHITE]).bitcount() - 8);
-    // stack->eval_data.mobility[BLACK] += 2 * ((black_queen_attacks & ~board.bbs[BLACK]).bitcount() - 8);
-    // stack->eval_data.final_score += ((white_queen_attacks & board.bbs[BLACK]).bitcount() - (black_queen_attacks & board.bbs[WHITE]).bitcount());
-
-    Score white_mobility = (white_queen_attacks & ~board.bbs[WHITE]).bitcount();
-    Score black_mobility = (black_queen_attacks & ~board.bbs[BLACK]).bitcount();
-
-    stack->eval_data.midgame_mobility[WHITE] += white_mobility;
-    stack->eval_data.midgame_mobility[BLACK] += black_mobility;
-
-    stack->eval_data.endgame_mobility[WHITE] += 2*white_mobility;
-    stack->eval_data.endgame_mobility[BLACK] += 2*black_mobility;
-
-    // stack->eval_data.final_score -= ((white_queens & ~stack->eval_data.hanging_pieces[WHITE] & stack->eval_data.weaker_attacks[BLACK][QUEEN]).bitcount()
-    //                                - (black_queens & ~stack->eval_data.hanging_pieces[BLACK] & stack->eval_data.weaker_attacks[WHITE][QUEEN]).bitcount()) * mat_val(QUEEN)/100;
-    stack->eval_data.final_score -= ((white_queens & stack->threats[BLACK]).bitcount() - (black_queens & stack->threats[WHITE]).bitcount()) * mat_val(QUEEN)/64;
-    // stack->eval_data.final_score -= ((white_queens & stack->eval_data.hanging_pieces[WHITE]).bitcount() - (black_queens & stack->eval_data.hanging_pieces[BLACK]).bitcount()) * mat_val(QUEEN)/8;
+        mid_control_score += control * midgame_mobility_value[pt];
+        end_control_score += control * endgame_mobility_value[pt];
+    }
+    stack->eval_data.midgame_score += mid_control_score * 2;
+    stack->eval_data.endgame_score += end_control_score * 2;
+    stack->eval_data.final_score += threat_score/100;
 }
 
 void Engine::king_eval(const Board& board, Search_Stack* stack) {
