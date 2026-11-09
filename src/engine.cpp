@@ -514,16 +514,16 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
     e.midgame_score += ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
                      + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
+    // constexpr Score knight_adj_mat[9] = {-20, -16, -12, -8, -4, 0, 4, 8, 12};
+    // constexpr Score rook_adj_mat[9]   = {15, 12, 9, 6, 3, 0, -3, -6, -9};
+    // e.final_score += board.bbs.piece_counts[WHITE][KNIGHT] * knight_adj_mat[board.bbs.piece_counts[WHITE][PAWN]]
+    //                - board.bbs.piece_counts[BLACK][KNIGHT] * knight_adj_mat[board.bbs.piece_counts[BLACK][PAWN]];
+    // e.final_score += board.bbs.piece_counts[WHITE][ROOK] * rook_adj_mat[board.bbs.piece_counts[WHITE][PAWN]]
+    //                - board.bbs.piece_counts[BLACK][ROOK] * rook_adj_mat[board.bbs.piece_counts[BLACK][PAWN]];
+
     pawn_eval(board, stack);
-    // knight_eval(board, stack);
-    // bishop_eval(board, stack);
-    // rook_eval(board, stack);
-    // queen_eval(board, stack);
     king_eval(board, stack);
     attack_score(board, stack);
-
-    // e.midgame_score += e.midgame_mobility[WHITE] - e.midgame_mobility[BLACK];
-    // e.endgame_score += e.endgame_mobility[WHITE] - e.endgame_mobility[BLACK];
 
     e.final_score += ((e.midgame_score * midgame_weight) + (e.endgame_score * endgame_weight)) / 24;
     e.final_score += hanging_pieces_eval(board, stack);
@@ -562,13 +562,13 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
         if (row >= 4)
-            stack->eval_data.endgame_score += row - 3;
+            stack->eval_data.endgame_score += (row - 3) * 5;
     }
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
         if (row <= 3)
-            stack->eval_data.endgame_score -= 4 - row;
+            stack->eval_data.endgame_score -= (4 - row) * 5;
     }
 }
 
@@ -580,6 +580,7 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
     piece_attacks[WHITE][BISHOP] = Move_Generator::bishop_attacks(board.bbs[WHITE, BISHOP], board.bbs.all());
     piece_attacks[WHITE][ROOK]   = Move_Generator::rook_attacks(board.bbs[WHITE, ROOK], board.bbs.all());
     piece_attacks[WHITE][QUEEN]  = Move_Generator::queen_attacks(board.bbs[WHITE, QUEEN], board.bbs.all());
+    // piece_attacks[WHITE][KING]   = Move_Generator::king_attacks(board.bbs[WHITE, KING]);
 
     // weaker_attacks[WHITE][KNIGHT]  = piece_attacks[WHITE][PAWN];
     // weaker_attacks[WHITE][BISHOP]  = piece_attacks[WHITE][PAWN];
@@ -591,6 +592,7 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
     piece_attacks[BLACK][BISHOP] = Move_Generator::bishop_attacks(board.bbs[BLACK, BISHOP], board.bbs.all());
     piece_attacks[BLACK][ROOK]   = Move_Generator::rook_attacks(board.bbs[BLACK, ROOK], board.bbs.all());
     piece_attacks[BLACK][QUEEN]  = Move_Generator::queen_attacks(board.bbs[BLACK, QUEEN], board.bbs.all());
+    // piece_attacks[BLACK][KING]   = Move_Generator::king_attacks(board.bbs[BLACK, KING]);
 
     // weaker_attacks[BLACK][KNIGHT]  = piece_attacks[BLACK][PAWN];
     // weaker_attacks[BLACK][BISHOP]  = piece_attacks[BLACK][PAWN];
@@ -599,6 +601,7 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
 
     constexpr Score midgame_mobility_value[NUM_PIECE_TYPES] = {2, 4, 3, 3, 1, 0};
     constexpr Score endgame_mobility_value[NUM_PIECE_TYPES] = {2, 3, 3, 3, 2, 0};
+    // constexpr Score tropism_value[NUM_PIECE_TYPES]          = {5, 2, 2, 3, 6, 0};
     Score pawn_control = piece_attacks[WHITE][PAWN].bitcount() - piece_attacks[BLACK][PAWN].bitcount();
     Score mid_control_score = pawn_control * midgame_mobility_value[PAWN];
     Score end_control_score = pawn_control * endgame_mobility_value[PAWN];
@@ -622,6 +625,8 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
 
         mid_control_score += control * midgame_mobility_value[pt];
         end_control_score += control * endgame_mobility_value[pt];
+        // stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[BLACK][KING]).bitcount()
+        //                               -  (piece_attacks[BLACK][pt] & piece_attacks[WHITE][KING]).bitcount()) * tropism_value[pt];
     }
     stack->eval_data.midgame_score += mid_control_score * 2;
     stack->eval_data.endgame_score += end_control_score * 2;
