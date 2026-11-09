@@ -18,8 +18,6 @@ struct Eval_Data {
     Score midgame_score = 0;
     Score endgame_score = 0;
     Score game_phase = 0;
-    Score midgame_mobility[NUM_COLORS]{};
-    Score endgame_mobility[NUM_COLORS]{};
     BB64 hanging_pieces[NUM_COLORS]{};
 
     void reset() {
@@ -29,8 +27,6 @@ struct Eval_Data {
         game_phase = 0;
 
         for (int c = 0; c < NUM_COLORS; c++) {
-            midgame_mobility[c] = 0;
-            endgame_mobility[c] = 0;
             hanging_pieces[c] = 0;
         }
     }

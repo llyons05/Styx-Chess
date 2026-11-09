@@ -514,13 +514,6 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
     e.midgame_score += ((board.bbs[WHITE] & small_center).bitcount() - (board.bbs[BLACK] & small_center).bitcount()) * 10
                      + ((board.bbs[WHITE] & big_center).bitcount() - (board.bbs[BLACK] & big_center).bitcount()) * 5;
 
-    // constexpr Score knight_adj_mat[9] = {-20, -16, -12, -8, -4, 0, 4, 8, 12};
-    // constexpr Score rook_adj_mat[9]   = {15, 12, 9, 6, 3, 0, -3, -6, -9};
-    // e.final_score += board.bbs.piece_counts[WHITE][KNIGHT] * knight_adj_mat[board.bbs.piece_counts[WHITE][PAWN]]
-    //                - board.bbs.piece_counts[BLACK][KNIGHT] * knight_adj_mat[board.bbs.piece_counts[BLACK][PAWN]];
-    // e.final_score += board.bbs.piece_counts[WHITE][ROOK] * rook_adj_mat[board.bbs.piece_counts[WHITE][PAWN]]
-    //                - board.bbs.piece_counts[BLACK][ROOK] * rook_adj_mat[board.bbs.piece_counts[BLACK][PAWN]];
-
     pawn_eval(board, stack);
     king_eval(board, stack);
     attack_score(board, stack);
@@ -536,42 +529,8 @@ Score Engine::eval(const Board& board, Search_Stack* stack) {
     if (board.stm() == BLACK)
         e.final_score *= -1;
 
-    // board.print();
-    // std::cerr << "EVAL: " << e.final_score << "\n";
-    // std::cerr << "MOBILITY: " << e.mobility[WHITE] << ", " << e.mobility[BLACK] << "\n";
-    // std::cerr << "MIDGAME: " << e.midgame_score << "\n";
-    // std::cerr << "ENDGAME: " << e.endgame_score << "\n\n";
     return e.final_score;
 }
-
-
-void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_pawns = board.bbs[WHITE, PAWN];
-    BB64 black_pawns = board.bbs[BLACK, PAWN];
-    // BB64 white_pawn_attacks = Move_Generator::pawn_attacks<WHITE>(white_pawns);
-    // BB64 black_pawn_attacks = Move_Generator::pawn_attacks<BLACK>(black_pawns);
-
-    // stack->eval_data.midgame_score += ((white_pawns & white_pawn_attacks).bitcount() - (black_pawns & black_pawn_attacks).bitcount()) * 4;
-    // // stack->eval_data.midgame_score += ((white_pawns & big_center).bitcount() - (black_pawns & big_center).bitcount()) * 2;
-    // // stack->eval_data.final_score += ((white_pawn_attacks & board.bbs[BLACK]).bitcount() - (black_pawn_attacks & board.bbs[WHITE]).bitcount()) * 4;
-
-    // // stack->eval_data.final_score -= ((white_pawns & stack->eval_data.hanging_pieces[WHITE]).bitcount() - (black_pawns & stack->eval_data.hanging_pieces[BLACK]).bitcount()) * mat_val(PAWN)/64;
-    // stack->eval_data.final_score -= ((white_pawns & stack->threats[BLACK]).bitcount() - (black_pawns & stack->threats[WHITE]).bitcount()) * mat_val(PAWN)/64;
-
-    while (white_pawns) {
-        eSquare s = white_pawns.pop();
-        U8 row = square_row(s);
-        if (row >= 4)
-            stack->eval_data.endgame_score += (row - 3) * 5;
-    }
-    while (black_pawns) {
-        eSquare s = black_pawns.pop();
-        U8 row = square_row(s);
-        if (row <= 3)
-            stack->eval_data.endgame_score -= (4 - row) * 5;
-    }
-}
-
 
 void Engine::attack_score(const Board& board, Search_Stack* stack) {
     BB64 piece_attacks[NUM_COLORS][NUM_PIECE_TYPES]{};
@@ -580,28 +539,16 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
     piece_attacks[WHITE][BISHOP] = Move_Generator::bishop_attacks(board.bbs[WHITE, BISHOP], board.bbs.all());
     piece_attacks[WHITE][ROOK]   = Move_Generator::rook_attacks(board.bbs[WHITE, ROOK], board.bbs.all());
     piece_attacks[WHITE][QUEEN]  = Move_Generator::queen_attacks(board.bbs[WHITE, QUEEN], board.bbs.all());
-    // piece_attacks[WHITE][KING]   = Move_Generator::king_attacks(board.bbs[WHITE, KING]);
-
-    // weaker_attacks[WHITE][KNIGHT]  = piece_attacks[WHITE][PAWN];
-    // weaker_attacks[WHITE][BISHOP]  = piece_attacks[WHITE][PAWN];
-    // weaker_attacks[WHITE][ROOK]    = piece_attacks[WHITE][KNIGHT] | piece_attacks[WHITE][BISHOP] | piece_attacks[WHITE][PAWN];
-    // weaker_attacks[WHITE][QUEEN]   = weaker_attacks[WHITE][ROOK] | piece_attacks[WHITE][ROOK];
 
     piece_attacks[BLACK][PAWN]   = Move_Generator::pawn_attacks<BLACK>(board.bbs[BLACK, PAWN]);
     piece_attacks[BLACK][KNIGHT] = Move_Generator::knight_attacks(board.bbs[BLACK, KNIGHT]);
     piece_attacks[BLACK][BISHOP] = Move_Generator::bishop_attacks(board.bbs[BLACK, BISHOP], board.bbs.all());
     piece_attacks[BLACK][ROOK]   = Move_Generator::rook_attacks(board.bbs[BLACK, ROOK], board.bbs.all());
     piece_attacks[BLACK][QUEEN]  = Move_Generator::queen_attacks(board.bbs[BLACK, QUEEN], board.bbs.all());
-    // piece_attacks[BLACK][KING]   = Move_Generator::king_attacks(board.bbs[BLACK, KING]);
-
-    // weaker_attacks[BLACK][KNIGHT]  = piece_attacks[BLACK][PAWN];
-    // weaker_attacks[BLACK][BISHOP]  = piece_attacks[BLACK][PAWN];
-    // weaker_attacks[BLACK][ROOK]    = piece_attacks[BLACK][KNIGHT] | piece_attacks[BLACK][BISHOP] | piece_attacks[BLACK][PAWN];
-    // weaker_attacks[BLACK][QUEEN]   = weaker_attacks[BLACK][ROOK] | piece_attacks[BLACK][ROOK];
 
     constexpr Score midgame_mobility_value[NUM_PIECE_TYPES] = {2, 4, 3, 3, 1, 0};
     constexpr Score endgame_mobility_value[NUM_PIECE_TYPES] = {2, 3, 3, 3, 2, 0};
-    // constexpr Score tropism_value[NUM_PIECE_TYPES]          = {5, 2, 2, 3, 6, 0};
+    constexpr Score tropism_value[NUM_PIECE_TYPES]          = {5, 4, 4, 5, 6, 0};
     Score pawn_control = piece_attacks[WHITE][PAWN].bitcount() - piece_attacks[BLACK][PAWN].bitcount();
     Score mid_control_score = pawn_control * midgame_mobility_value[PAWN];
     Score end_control_score = pawn_control * endgame_mobility_value[PAWN];
@@ -625,22 +572,35 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
 
         mid_control_score += control * midgame_mobility_value[pt];
         end_control_score += control * endgame_mobility_value[pt];
-        // stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[BLACK][KING]).bitcount()
-        //                               -  (piece_attacks[BLACK][pt] & piece_attacks[WHITE][KING]).bitcount()) * tropism_value[pt];
+        stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[BLACK][KING]).bitcount()
+                                      -  (piece_attacks[BLACK][pt] & piece_attacks[WHITE][KING]).bitcount()) * tropism_value[pt];
+        stack->eval_data.final_score += ((piece_attacks[WHITE][pt] & piece_attacks[WHITE][KING]).bitcount()
+                                      -  (piece_attacks[BLACK][pt] & piece_attacks[BLACK][KING]).bitcount()) * 4;
     }
     stack->eval_data.midgame_score += mid_control_score * 2;
     stack->eval_data.endgame_score += end_control_score * 2;
     stack->eval_data.final_score += threat_score/100;
 }
 
-void Engine::king_eval(const Board& board, Search_Stack* stack) {
-    BB64 white_king = board.bbs[WHITE, KING];
-    BB64 black_king = board.bbs[BLACK, KING];
-    // BB64 white_king_attacks = Move_Generator::king_attacks(white_king);
-    // BB64 black_king_attacks = Move_Generator::king_attacks(black_king);
+void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
+    BB64 white_pawns = board.bbs[WHITE, PAWN];
+    BB64 black_pawns = board.bbs[BLACK, PAWN];
+    while (white_pawns) {
+        eSquare s = white_pawns.pop();
+        U8 row = square_row(s);
+        if (row >= 4)
+            stack->eval_data.endgame_score += (row - 3) * 5;
+    }
+    while (black_pawns) {
+        eSquare s = black_pawns.pop();
+        U8 row = square_row(s);
+        if (row <= 3)
+            stack->eval_data.endgame_score -= (4 - row) * 5;
+    }
+}
 
-    // stack->eval_data.midgame_score -= ((white_king_attacks & stack->threats[BLACK] & ~board.bbs[WHITE]).bitcount() - (black_king_attacks & stack->threats[WHITE] & ~board.bbs[BLACK]).bitcount()) * 4;
-    stack->eval_data.midgame_score += (king_safety_table[white_king.lsb()] - king_safety_table[63 - black_king.lsb()]) * 2;
+void Engine::king_eval(const Board& board, Search_Stack* stack) {
+    stack->eval_data.midgame_score += (king_safety_table[board.bbs.king_sq(WHITE)] - king_safety_table[63 - board.bbs.king_sq(BLACK)]) * 2;
     stack->eval_data.midgame_score += king_shield(board);
 }
 
