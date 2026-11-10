@@ -585,16 +585,27 @@ void Engine::attack_score(const Board& board, Search_Stack* stack) {
 void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     BB64 white_pawns = board.bbs[WHITE, PAWN];
     BB64 black_pawns = board.bbs[BLACK, PAWN];
+
+    BB64 white_passed = black_pawns.shift<SOUTH>().smear<SOUTH>();
+    white_passed = ~(white_passed | white_passed.shift<EAST>() | white_passed.shift<WEST>());
+
+    BB64 black_passed = white_pawns.shift<NORTH>().smear<NORTH>();
+    black_passed = ~(black_passed | black_passed.shift<EAST>() | black_passed.shift<WEST>());
+
     while (white_pawns) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
-        if (row >= 4)
+        if (white_passed.filled(s))
+            stack->eval_data.endgame_score += row * 15;
+        else if (row > 3)
             stack->eval_data.endgame_score += (row - 3) * 5;
     }
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
-        if (row <= 3)
+        if (black_passed.filled(s))
+            stack->eval_data.endgame_score -= (7 - row) * 15;
+        else if (row < 4)
             stack->eval_data.endgame_score -= (4 - row) * 5;
     }
 }
