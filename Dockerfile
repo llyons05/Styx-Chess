@@ -8,6 +8,8 @@ COPY ./config.yml ./config/config.yml.template
 COPY ./resources/PerfectX.bin ./books/
 COPY ./test/entrypoint.sh ./entrypoint.sh
 
+RUN chmod +x ./entrypoint.sh
+
 RUN apt-get update && apt-get install -y gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
