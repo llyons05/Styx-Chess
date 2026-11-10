@@ -34,7 +34,7 @@ engine:                            # Engine settings.
     resign_score: -1000            # If the score is less than or equal to this value, the bot resigns (in cp).
     resign_for_egtb_minus_two: false # If true the bot will resign in positions where the online_egtb returns a wdl of -2.
     resign_moves: 3                # How many moves in a row the score has to be below the resign value.
-    offer_draw_enabled: false       # Whether or not the bot should offer/accept draw.
+    offer_draw_enabled: true       # Whether or not the bot should offer/accept draw.
     offer_draw_score: 0            # If the absolute value of the score is less than or equal to this value, the bot offers/accepts draw (in cp).
     offer_draw_for_egtb_zero: false # If true the bot will offer/accept draw in positions where the online_egtb returns a wdl of 0.
     offer_draw_moves: 20           # How many moves in a row the absolute value of the score has to be below the draw value.
@@ -180,7 +180,7 @@ challenge:                         # Incoming challenges.
   min_rating: 0                   # Minimum rating of the challenger to accept a challenge.
   max_rating: 3000                # Maximum rating of the challenger to accept a challenge. The maximum rating in lichess is 4000.
   rating_difference: 250          # Maximum rating difference between the bot and the challenger. Overrides min_rating and max_rating if set.
-  bullet_requires_increment: false # Require that bullet game challenges from bots have a non-zero increment
+  bullet_requires_increment: true # Require that bullet game challenges from bots have a non-zero increment
   max_simultaneous_games_per_user: 5  # Maximum number of simultaneous games with the same user
 
 greeting:
@@ -203,7 +203,7 @@ matchmaking:
   allow_matchmaking: true         # Set it to 'true' to challenge other bots.
   allow_during_games: true        # Set it to 'true' to create challenges during long games.
   challenge_variant: "random"      # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
-  challenge_timeout: 5            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
+  challenge_timeout: 1            # Create a challenge after being idle for 'challenge_timeout' minutes. The minimum is 1 minute.
   challenge_initial_time:          # Initial time in seconds of the challenge (to be chosen at random).
     - 60
     - 180
