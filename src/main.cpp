@@ -20,7 +20,7 @@ void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
     while (true) {
         if (board.is_draw())
             break;
-        Move_Generator mg(board);
+        Move_Generator mg(board, 50);
         bool undo = false;
         int legal_movecount = 0;
         for (Move& move : mg.movelist) {

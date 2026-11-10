@@ -28,7 +28,7 @@ bool failed = false;
 U64 perft(Board& board, int depth) {
     total_nodes++;
     U64 result = 0;
-    Move_Generator mg(board);
+    Move_Generator mg(board, 50);
     BB_State_Info info = board.bbs.state_info();
 
     if (depth <= 0)
