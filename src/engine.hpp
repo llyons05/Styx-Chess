@@ -33,13 +33,13 @@ struct Eval_Data {
 };
 
 struct Search_Stack {
-    int ply = 0;
-    Depth reduction = 0;
-    Move current_move = Move();
-    BB_State_Info state_info;
-    Eval_Data eval_data;
-
     BB64 threats[NUM_COLORS]{};
+    Eval_Data eval_data;
+    BB_State_Info state_info;
+    Move current_move = Move();
+    Depth reduction = 0;
+    int ply = 0;
+    U8 psuedo_legal_movecount = 0;
 };
 
 class Engine {

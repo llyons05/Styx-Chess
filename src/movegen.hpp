@@ -14,8 +14,8 @@ public:
     std::vector<Move> movelist;
     BB64 destinations;
 
-    Move_Generator(const Board& board) : movelist(), destinations(0), board(board), bbs(board.bbs) {
-        // movelist.reserve(previous_movecount);
+    Move_Generator(const Board& board, U8 prev_movecount) : movelist(), destinations(0), board(board), bbs(board.bbs) {
+        movelist.reserve(prev_movecount + 5);
         if (board.stm() == WHITE)
             gen_moves<WHITE>();
         else

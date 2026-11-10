@@ -77,11 +77,12 @@ TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
 }
 
 void Engine::init_stack(const Board& board, Search_Stack* stack_base) {
-    for (int i = 0; i <= MAX_PLY; i++)
-        stack_base[i].ply = i;
-    stack_base[0].state_info = board.bbs.state_info();
-    stack_base[0].threats[WHITE] = Move_Generator::attacks(board, WHITE);
-    stack_base[0].threats[BLACK] = Move_Generator::attacks(board, BLACK);
+    for (int i = 0; i <= MAX_PLY+1; i++)
+        stack_base[i].ply = i-1;
+    stack_base[0].psuedo_legal_movecount = 50;
+    stack_base[1].state_info = board.bbs.state_info();
+    stack_base[1].threats[WHITE] = Move_Generator::attacks(board, WHITE);
+    stack_base[1].threats[BLACK] = Move_Generator::attacks(board, BLACK);
 }
 
 void Engine::update_stack(const Board& board, Search_Stack* stack) {
@@ -197,17 +198,18 @@ void Engine::undo_move(Board& board, Search_Stack* stack, const Move& move) {
 }
 
 Score Engine::search_iterate(Board& board) {
-    Search_Stack stack[MAX_PLY + 1] {};
+    Search_Stack stack[MAX_PLY + 2] {};
     init_stack(board, stack);
-    Move_Generator root_mg(board);
-    set_movescores(board, root_mg, stack, 255);
+    Move_Generator root_mg(board, 50);
+    set_movescores(board, root_mg, stack+1, 255);
+    (stack+1)->psuedo_legal_movecount = root_mg.movelist.size();
 
     Depth current_depth = 1;
-    Score final_val = search_root(board, root_mg, stack, -INF_SCORE, INF_SCORE, current_depth++);
+    Score final_val = search_root(board, root_mg, stack+1, -INF_SCORE, INF_SCORE, current_depth++);
     UCI_Command::info(nodes_traversed, 1, start_time, final_val, tt.hashfull());
 
     while (((abs(final_val) < MAX_SCORE - current_depth)) && !search_cancelled && (current_depth < MAX_PLY)) {
-        final_val = search_widen(board, root_mg, stack, current_depth, final_val);
+        final_val = search_widen(board, root_mg, stack+1, current_depth, final_val);
         UCI_Command::info(nodes_traversed, current_depth, start_time, final_val, tt.hashfull());
         current_depth++;
     }
@@ -355,8 +357,9 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
      && (eval(board, stack) + 200*depth <= alpha))
         futility_prune = true;
 
-    Move_Generator mg(board);
+    Move_Generator mg(board, (stack-2)->psuedo_legal_movecount);
     set_movescores(board, mg, stack, tt_move_id);
+    stack->psuedo_legal_movecount = mg.movelist.size();
     eEntry_Type tt_flag = TT_UPPERBOUND;
     U8 best_move_id = 255;
     int moves_tried = 0;
@@ -459,8 +462,9 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     if (static_eval > alpha)
         alpha = static_eval;
     
-    Move_Generator mg(board);
+    Move_Generator mg(board, (stack-2)->psuedo_legal_movecount);
     set_movescores(board, mg, stack, 255);
+    stack->psuedo_legal_movecount = mg.movelist.size();
 
     int legal_moves = 0;
     for (size_t i = 0; i < mg.movelist.size(); i++) {

@@ -186,7 +186,7 @@ void UCI_Command::play_moves(const std::string& moves) {
             continue;
         
         Move move_to_make;
-        Move_Generator mg(board);
+        Move_Generator mg(board, 50);
         for (const Move& m : mg.movelist) {
             if (m.long_alg() == move_str) {
                 move_to_make = m;
