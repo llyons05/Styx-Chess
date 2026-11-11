@@ -45,7 +45,7 @@ void Engine::new_game() {
         for (int i = 0; i < NUM_PIECE_TYPES; i++)
             for (int j = 0; j < 64; j++)
                 for (int k = 0; k < NUM_PIECE_TYPES; k++)
-                    cap_history_table[c][i][j][k] /= 2;
+                    cap_history_table[c][i][j][k] = 0;
     }
 }
 
@@ -111,8 +111,8 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
 
-            int cap_hist = cap_history_table[board.stm()][move.piece_from][move.to][move.piece_captured];
-            if (see >= -cap_hist/18)
+            int16_t cap_hist = cap_history_table[board.stm()][move.piece_from][move.to][move.piece_captured];
+            if (see >= -cap_hist/16)
                 move.score = CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
             else
                 move.score = -CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
@@ -201,12 +201,11 @@ void Engine::update_history(const Board& board, const Move& m, Move_Generator& m
         for (size_t j = 0; j < i; j++)
             if (!(mg[j].is_capture() || mg[j].is_promo()))
                 history_table[board.stm()][mg[j].from][mg[j].to] << -d*d;
+            else if (mg[j].is_capture())
+                cap_history_table[board.stm()][mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -d*d;
     }
     else if (m.is_capture()) {
         cap_history_table[board.stm()][m.piece_from][m.to][m.piece_captured] << d*d;
-        for (size_t j = 0; j < i; j++)
-            if (mg[j].is_capture())
-                cap_history_table[board.stm()][mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -d*d;
     }
 }
 
