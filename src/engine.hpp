@@ -8,10 +8,11 @@
 
 constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
-constexpr int PROMO_ORDERING_VAL    = 30000;
+constexpr int PROMO_ORDERING_VAL    = 50000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
+constexpr int CAPTURE_HISTORY_ORDERING_VAL  = 5000;
 
 struct Eval_Data {
     Score final_score = 0;
@@ -60,6 +61,7 @@ private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
     Clamped_Stat<int16_t, HISTORY_ORDERING_VAL> history_table[NUM_COLORS][64][64]{};
+    Clamped_Stat<int16_t, CAPTURE_HISTORY_ORDERING_VAL> cap_history_table[NUM_PIECE_TYPES][64][NUM_PIECE_TYPES]{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
@@ -68,6 +70,7 @@ private:
     void update_stack(const Board& board, Search_Stack* stack);
     void set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
     void set_killers(const Move& move, Search_Stack* stack);
+    void update_history(const Board& board, const Move& move, Move_Generator& mg, size_t i, Depth d);
 
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);

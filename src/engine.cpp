@@ -41,6 +41,11 @@ void Engine::new_game() {
         for (int i = 0; i < 64; i++)
             for (int j = 0; j < 64; j++)
                 history_table[c][i][j] = 0;
+    
+    for (int i = 0; i < NUM_PIECE_TYPES; i++)
+        for (int j = 0; j < 64; j++)
+            for (int k = 0; k < NUM_PIECE_TYPES; k++)
+                cap_history_table[i][j][k] = 0;
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
@@ -62,6 +67,10 @@ void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
             history_table[WHITE][i][j] /= 2;
             history_table[BLACK][i][j] /= 2;
         }
+    for (int i = 0; i < NUM_PIECE_TYPES; i++)
+        for (int j = 0; j < 64; j++)
+            for (int k = 0; k < NUM_PIECE_TYPES; k++)
+                cap_history_table[i][j][k] /= 2;
 }
 
 TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
@@ -180,6 +189,20 @@ void Engine::set_killers(const Move& move, Search_Stack* stack) {
         if (move != killer_moves[stack->ply][0])
             killer_moves[stack->ply][1] = killer_moves[stack->ply][0];
         killer_moves[stack->ply][0] = move;
+    }
+}
+void Engine::update_history(const Board& board, const Move& m, Move_Generator& mg, size_t i, Depth d) {
+    if (!m.is_capture() && !m.is_promo()) {
+        history_table[board.stm()][m.from][m.to] << d*d;
+        for (size_t j = 0; j < i; j++)
+            if (!(mg[j].is_capture() || mg[j].is_promo()))
+                history_table[board.stm()][mg[j].from][mg[j].to] << -d*d;
+    }
+    else if (m.is_capture()) {
+        cap_history_table[m.piece_from][m.to][m.piece_captured] << d*d;
+        for (size_t j = 0; j < i; j++)
+            if (mg[j].is_capture())
+                cap_history_table[mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -d*d;
     }
 }
 
@@ -373,7 +396,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
         if (futility_prune
          && moves_tried
-         && !m.is_capture()
+         && (!m.is_capture() || cap_history_table[m.piece_from][m.to][m.piece_captured] < -500)
          && !m.is_promo()
          && !in_check(board, board.stm(), stack+1)) {
             undo_move(board, stack, m);
@@ -388,7 +411,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
          && !flag_in_check) {
             int r = reductions[depth-1] + reductions[moves_tried-1];
             if (m.is_capture())
-                r -= mat_val(m.piece_captured)*8;
+                r -= mat_val(m.piece_captured)*6 + cap_history_table[m.piece_from][m.to][m.piece_captured];
             else
                 r -= m.score/2;
             stack->reduction = std::clamp(r/1024, 0, depth);
@@ -414,13 +437,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
             if (alpha >= beta) {
                 tt_flag = TT_LOWERBOUND;
                 set_killers(m, stack);
-                if (!m.is_capture() && !m.is_promo()) {
-                    history_table[board.stm()][m.from][m.to] << depth*depth;
-                    for (size_t j = 0; j < i; j++)
-                        if (!(mg[j].is_capture() || mg[j].is_promo()))
-                            history_table[board.stm()][mg[j].from][mg[j].to] << -depth*depth;
-                }
-
+                update_history(board, m, mg, i, depth);
                 break;
             }
             tt_flag = TT_EXACT;
@@ -474,7 +491,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) {
+        if (!(m.is_capture() || m.is_promo()) || (m.is_capture() && cap_history_table[m.piece_from][m.to][m.piece_captured] < -500)) {
             undo_move(board, stack, m);
             continue;
         }
