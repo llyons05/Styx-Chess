@@ -37,15 +37,16 @@ void Engine::new_game() {
         killer_moves[i][0] = Move();
         killer_moves[i][1] = Move();
     }
-    for (eColor c = WHITE; c < NUM_COLORS; c++)
+    for (eColor c = WHITE; c < NUM_COLORS; c++) {
         for (int i = 0; i < 64; i++)
             for (int j = 0; j < 64; j++)
                 history_table[c][i][j] = 0;
     
-    for (int i = 0; i < NUM_PIECE_TYPES; i++)
-        for (int j = 0; j < 64; j++)
-            for (int k = 0; k < NUM_PIECE_TYPES; k++)
-                cap_history_table[i][j][k] = 0;
+        for (int i = 0; i < NUM_PIECE_TYPES; i++)
+            for (int j = 0; j < 64; j++)
+                for (int k = 0; k < NUM_PIECE_TYPES; k++)
+                    cap_history_table[c][i][j][k] /= 2;
+    }
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
@@ -69,8 +70,10 @@ void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
         }
     for (int i = 0; i < NUM_PIECE_TYPES; i++)
         for (int j = 0; j < 64; j++)
-            for (int k = 0; k < NUM_PIECE_TYPES; k++)
-                cap_history_table[i][j][k] /= 2;
+            for (int k = 0; k < NUM_PIECE_TYPES; k++) {
+                cap_history_table[WHITE][i][j][k] /= 2;
+                cap_history_table[BLACK][i][j][k] /= 2;
+            }
 }
 
 TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
@@ -108,10 +111,11 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
 
-            if (see < -50)
-                move.score = -CAPTURE_ORDERING_VAL + see - move.piece_from;
+            int cap_hist = cap_history_table[board.stm()][move.piece_from][move.to][move.piece_captured];
+            if (see >= -cap_hist/18)
+                move.score = CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
             else
-                move.score = CAPTURE_ORDERING_VAL + see - move.piece_from;
+                move.score = -CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
         }
 
         if (move.is_promo()) {
@@ -199,10 +203,10 @@ void Engine::update_history(const Board& board, const Move& m, Move_Generator& m
                 history_table[board.stm()][mg[j].from][mg[j].to] << -d*d;
     }
     else if (m.is_capture()) {
-        cap_history_table[m.piece_from][m.to][m.piece_captured] << d*d;
+        cap_history_table[board.stm()][m.piece_from][m.to][m.piece_captured] << d*d;
         for (size_t j = 0; j < i; j++)
             if (mg[j].is_capture())
-                cap_history_table[mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -d*d;
+                cap_history_table[board.stm()][mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -d*d;
     }
 }
 
@@ -396,7 +400,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
 
         if (futility_prune
          && moves_tried
-         && (!m.is_capture() || cap_history_table[m.piece_from][m.to][m.piece_captured] < -500)
+         && !m.is_capture()
          && !m.is_promo()
          && !in_check(board, board.stm(), stack+1)) {
             undo_move(board, stack, m);
@@ -411,7 +415,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
          && !flag_in_check) {
             int r = reductions[depth-1] + reductions[moves_tried-1];
             if (m.is_capture())
-                r -= mat_val(m.piece_captured)*6 + cap_history_table[m.piece_from][m.to][m.piece_captured];
+                r -= mat_val(m.piece_captured)*8;
             else
                 r -= m.score/2;
             stack->reduction = std::clamp(r/1024, 0, depth);
@@ -491,7 +495,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!(m.is_capture() || m.is_promo()) || (m.is_capture() && cap_history_table[m.piece_from][m.to][m.piece_captured] < -500)) {
+        if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) {
             undo_move(board, stack, m);
             continue;
         }

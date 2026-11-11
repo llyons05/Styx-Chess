@@ -12,7 +12,7 @@ constexpr int PROMO_ORDERING_VAL    = 50000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
-constexpr int CAPTURE_HISTORY_ORDERING_VAL  = 5000;
+constexpr int CAPTURE_HISTORY_ORDERING_VAL  = 8192;
 
 struct Eval_Data {
     Score final_score = 0;
@@ -61,7 +61,7 @@ private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
     Clamped_Stat<int16_t, HISTORY_ORDERING_VAL> history_table[NUM_COLORS][64][64]{};
-    Clamped_Stat<int16_t, CAPTURE_HISTORY_ORDERING_VAL> cap_history_table[NUM_PIECE_TYPES][64][NUM_PIECE_TYPES]{};
+    Clamped_Stat<int16_t, CAPTURE_HISTORY_ORDERING_VAL> cap_history_table[NUM_COLORS][NUM_PIECE_TYPES][64][NUM_PIECE_TYPES]{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
