@@ -113,6 +113,7 @@ constexpr Score mat_val(ePieceType pt) {
     return vals[pt];
 }
 
+constexpr Score starting_material = 8 * mat_val(PAWN) + 2 * mat_val(KNIGHT) + 2 * mat_val(BISHOP) + 2 * mat_val(ROOK) + mat_val(QUEEN);
 
 // Small wrapper class for a piece
 class Piece {
