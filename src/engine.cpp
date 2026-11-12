@@ -627,25 +627,42 @@ Score Engine::king_shield(const Board& board) {
     U8 white_king_file = square_col(board.bbs.king_sq(WHITE));
     U8 black_king_file = square_col(board.bbs.king_sq(BLACK));
     if (square_row(board.bbs.king_sq(WHITE)) == 0) {
+        const Score white_open_file_pen = 4;// board.bbs.piece_counts[BLACK][ROOK] * 2 + board.bbs.piece_counts[BLACK][QUEEN]*4;
         if (white_king_file > FILE_F) {
             result += (white_pawns & (BB64(F2) | G2 | H2)).bitcount() * 8;
             result += (white_pawns & (BB64(F3) | G3 | H3)).bitcount() * 4;
+            for (int c = FILE_H; c >= FILE_F; c--)
+                if ((white_pawns & COLS[c] & (ROWS[1] | ROWS[2])).empty()) {
+                    result -= white_open_file_pen;
+                }
         }
         else if (white_king_file < FILE_D) {
             result += (white_pawns & (BB64(A2) | B2 | C2)).bitcount() * 8;
             result += (white_pawns & (BB64(A3) | B3 | C3)).bitcount() * 4;
+            for (int c = FILE_A; c <= FILE_C; c++)
+                if ((white_pawns & COLS[c] & (ROWS[1] | ROWS[2])).empty())
+                    result -= white_open_file_pen;
         }
     }
     if (square_row(board.bbs.king_sq(BLACK)) == 7) {
+        const Score black_open_file_pen = 4;//board.bbs.piece_counts[WHITE][ROOK] * 2 + board.bbs.piece_counts[WHITE][QUEEN]*4;
         if (black_king_file > FILE_F) {
             result -= (black_pawns & (BB64(F7) | G7 | H7)).bitcount() * 8;
             result -= (black_pawns & (BB64(F6) | G6 | H6)).bitcount() * 4;
+            for (int c = FILE_H; c >= FILE_F; c--)
+                if ((black_pawns & COLS[c] & (ROWS[6] | ROWS[5])).empty())
+                    result += black_open_file_pen;
         }
         else if (black_king_file < FILE_D) {
             result -= (black_pawns & (BB64(A7) | B7 | C7)).bitcount() * 8;
             result -= (black_pawns & (BB64(A6) | B6 | C6)).bitcount() * 4;
+            for (int c = FILE_A; c <= FILE_C; c++)
+                if ((black_pawns & COLS[c] & (ROWS[6] | ROWS[5])).empty())
+                    result += black_open_file_pen;
         }
     }
+
+
     return result;
 }
 
