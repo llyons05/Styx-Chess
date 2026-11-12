@@ -596,9 +596,14 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     BB64 black_passed = white_pawns.shift<NORTH>().smear<NORTH>();
     black_passed = ~(black_passed | black_passed.shift<EAST>() | black_passed.shift<WEST>());
 
+    BB64 white_attacks = Move_Generator::pawn_attacks<WHITE>(white_pawns);
+    BB64 black_attacks = Move_Generator::pawn_attacks<BLACK>(black_pawns);
+
     while (white_pawns) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
+        if ((COLS[square_col(s)] & white_attacks).empty()) // Isolated Pawns
+            stack->eval_data.final_score -= big_center.filled(s) ? 8 : 6;
         if (white_passed.filled(s))
             stack->eval_data.endgame_score += row * 15;
         else if (row > 3)
@@ -607,6 +612,8 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
+        if ((COLS[square_col(s)] & black_attacks).empty())
+            stack->eval_data.final_score += big_center.filled(s) ? 8 : 6;
         if (black_passed.filled(s))
             stack->eval_data.endgame_score -= (7 - row) * 15;
         else if (row < 4)
@@ -627,7 +634,7 @@ Score Engine::king_shield(const Board& board) {
     U8 white_king_file = square_col(board.bbs.king_sq(WHITE));
     U8 black_king_file = square_col(board.bbs.king_sq(BLACK));
     if (square_row(board.bbs.king_sq(WHITE)) == 0) {
-        const Score white_open_file_pen = 4;// board.bbs.piece_counts[BLACK][ROOK] * 2 + board.bbs.piece_counts[BLACK][QUEEN]*4;
+        const Score white_open_file_pen = 4;
         if (white_king_file > FILE_F) {
             result += (white_pawns & (BB64(F2) | G2 | H2)).bitcount() * 8;
             result += (white_pawns & (BB64(F3) | G3 | H3)).bitcount() * 4;
@@ -645,7 +652,7 @@ Score Engine::king_shield(const Board& board) {
         }
     }
     if (square_row(board.bbs.king_sq(BLACK)) == 7) {
-        const Score black_open_file_pen = 4;//board.bbs.piece_counts[WHITE][ROOK] * 2 + board.bbs.piece_counts[WHITE][QUEEN]*4;
+        const Score black_open_file_pen = 4;
         if (black_king_file > FILE_F) {
             result -= (black_pawns & (BB64(F7) | G7 | H7)).bitcount() * 8;
             result -= (black_pawns & (BB64(F6) | G6 | H6)).bitcount() * 4;
