@@ -596,9 +596,14 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     BB64 black_passed = white_pawns.shift<NORTH>().smear<NORTH>();
     black_passed = ~(black_passed | black_passed.shift<EAST>() | black_passed.shift<WEST>());
 
+    BB64 white_attacks = Move_Generator::pawn_attacks<WHITE>(white_pawns);
+    BB64 black_attacks = Move_Generator::pawn_attacks<BLACK>(black_pawns);
+
     while (white_pawns) {
         eSquare s = white_pawns.pop();
         U8 row = square_row(s);
+        if ((COLS[square_col(s)] & white_attacks).empty()) // Isolated Pawns
+            stack->eval_data.final_score -= big_center.filled(s) ? 8 : 6;
         if (white_passed.filled(s))
             stack->eval_data.endgame_score += row * 15;
         else if (row > 3)
@@ -607,6 +612,8 @@ void Engine::pawn_eval(const Board& board, Search_Stack* stack) {
     while (black_pawns) {
         eSquare s = black_pawns.pop();
         U8 row = square_row(s);
+        if ((COLS[square_col(s)] & black_attacks).empty())
+            stack->eval_data.final_score += big_center.filled(s) ? 8 : 6;
         if (black_passed.filled(s))
             stack->eval_data.endgame_score -= (7 - row) * 15;
         else if (row < 4)
@@ -621,31 +628,51 @@ void Engine::king_eval(const Board& board, Search_Stack* stack) {
 
 
 Score Engine::king_shield(const Board& board) {
-    Score result = 0;
+    constexpr Score shield_1 = 16;
+    constexpr Score shield_2 = 12;
+    constexpr Score open_file = 12;
+    Score white_result = 0;
+    Score black_result = 0;
     BB64 white_pawns = board.bbs[WHITE, PAWN];
     BB64 black_pawns = board.bbs[BLACK, PAWN];
     U8 white_king_file = square_col(board.bbs.king_sq(WHITE));
     U8 black_king_file = square_col(board.bbs.king_sq(BLACK));
     if (square_row(board.bbs.king_sq(WHITE)) == 0) {
         if (white_king_file > FILE_F) {
-            result += (white_pawns & (BB64(F2) | G2 | H2)).bitcount() * 8;
-            result += (white_pawns & (BB64(F3) | G3 | H3)).bitcount() * 4;
+            white_result += (white_pawns & (BB64(F2) | G2 | H2)).bitcount() * shield_1;
+            white_result += (white_pawns & (BB64(F3) | G3 | H3)).bitcount() * shield_2;
+            for (int c = FILE_H; c >= FILE_F; c--)
+                if ((white_pawns & COLS[c] & (ROWS[1] | ROWS[2])).empty()) {
+                    white_result -= open_file;
+                }
         }
         else if (white_king_file < FILE_D) {
-            result += (white_pawns & (BB64(A2) | B2 | C2)).bitcount() * 8;
-            result += (white_pawns & (BB64(A3) | B3 | C3)).bitcount() * 4;
+            white_result += (white_pawns & (BB64(A2) | B2 | C2)).bitcount() * shield_1;
+            white_result += (white_pawns & (BB64(A3) | B3 | C3)).bitcount() * shield_2;
+            for (int c = FILE_A; c <= FILE_C; c++)
+                if ((white_pawns & COLS[c] & (ROWS[1] | ROWS[2])).empty())
+                    white_result -= open_file;
         }
     }
     if (square_row(board.bbs.king_sq(BLACK)) == 7) {
         if (black_king_file > FILE_F) {
-            result -= (black_pawns & (BB64(F7) | G7 | H7)).bitcount() * 8;
-            result -= (black_pawns & (BB64(F6) | G6 | H6)).bitcount() * 4;
+            black_result += (black_pawns & (BB64(F7) | G7 | H7)).bitcount() * shield_1;
+            black_result += (black_pawns & (BB64(F6) | G6 | H6)).bitcount() * shield_2;
+            for (int c = FILE_H; c >= FILE_F; c--)
+                if ((black_pawns & COLS[c] & (ROWS[6] | ROWS[5])).empty())
+                    black_result -= open_file;
         }
         else if (black_king_file < FILE_D) {
-            result -= (black_pawns & (BB64(A7) | B7 | C7)).bitcount() * 8;
-            result -= (black_pawns & (BB64(A6) | B6 | C6)).bitcount() * 4;
+            black_result += (black_pawns & (BB64(A7) | B7 | C7)).bitcount() * shield_1;
+            black_result += (black_pawns & (BB64(A6) | B6 | C6)).bitcount() * shield_2;
+            for (int c = FILE_A; c <= FILE_C; c++)
+                if ((black_pawns & COLS[c] & (ROWS[6] | ROWS[5])).empty())
+                    black_result -= open_file;
         }
     }
+
+    Score result = (white_result*(board.bbs.material[BLACK] - mat_val(KING) - board.bbs.piece_counts[BLACK][PAWN] * mat_val(PAWN)) 
+                  - black_result*(board.bbs.material[WHITE] - mat_val(KING) - board.bbs.piece_counts[WHITE][PAWN] * mat_val(PAWN))) / (starting_material - 8*mat_val(PAWN));
     return result;
 }
 
