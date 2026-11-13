@@ -12,7 +12,7 @@ constexpr int PROMO_ORDERING_VAL    = 50000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4000;
-constexpr int CAPTURE_HISTORY_ORDERING_VAL  = 8192;
+constexpr int CAPTURE_HISTORY_ORDERING_VAL  = 4096;
 
 struct Eval_Data {
     Score final_score = 0;

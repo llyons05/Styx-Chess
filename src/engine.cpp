@@ -110,12 +110,12 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
             Score see = mat_val(move.piece_captured);
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
-
-            int16_t cap_hist = cap_history_table[board.stm()][move.piece_from][move.to][move.piece_captured];
-            if (see >= -cap_hist/16)
-                move.score = CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
+            // 8096 8 /18 is best,  4096 8 /18 did well too
+            int cap_val = mat_val(move.piece_captured)*8 + cap_history_table[board.stm()][move.piece_from][move.to][move.piece_captured];
+            if (see >= -cap_val/18)
+                move.score = CAPTURE_ORDERING_VAL + cap_val;
             else
-                move.score = -CAPTURE_ORDERING_VAL + mat_val(move.piece_captured)*6 + cap_hist;
+                move.score = -HISTORY_ORDERING_VAL + cap_val;
         }
 
         if (move.is_promo()) {
