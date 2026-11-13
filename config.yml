@@ -129,8 +129,8 @@ quit_after_all_games_finish: true # If set to true, then pressing Ctrl-C to quit
 
 correspondence:
   move_time: 120                    # Time in seconds to search in correspondence games.
-  checkin_period: 300              # How often to check for opponent moves in correspondence games after disconnecting.
-  disconnect_time: 150             # Time before disconnecting from a correspondence game.
+  checkin_period: 600              # How often to check for opponent moves in correspondence games after disconnecting.
+  disconnect_time: 10             # Time before disconnecting from a correspondence game.
   ponder: false                    # Ponder in correspondence games the bot is connected to.
 
 challenge:                         # Incoming challenges.
