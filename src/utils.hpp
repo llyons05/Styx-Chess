@@ -268,8 +268,10 @@ public:
     operator const T&() const { return data; }
 
     void operator<<(int bonus) {
+        int before = data;
         int clampedBonus = std::clamp(bonus, -Max, Max);
         data += clampedBonus - data * std::abs(clampedBonus) / Max;
+        int after = data;
         assert(std::abs(data) <= Max);
     }
 

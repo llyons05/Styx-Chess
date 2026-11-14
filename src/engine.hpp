@@ -11,7 +11,12 @@ constexpr int ROOT_ORDERING_VAL     = 100000;
 constexpr int PROMO_ORDERING_VAL    = 30000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
-constexpr int HISTORY_ORDERING_VAL  = 4000;
+constexpr int HISTORY_ORDERING_VAL  = 4096;
+
+using History_Table = Clamped_Stat<int16_t, HISTORY_ORDERING_VAL>[NUM_COLORS][64][64];
+using Piece_To_Table = Clamped_Stat<int16_t, HISTORY_ORDERING_VAL>[NUM_PIECE_TYPES][64];
+using Continuation_History = Piece_To_Table[NUM_COLORS][NUM_PIECE_TYPES][64];
+using Continuation_History_Ptr = std::unique_ptr<Continuation_History>;
 
 struct Eval_Data {
     Score final_score = 0;
@@ -36,11 +41,18 @@ struct Search_Stack {
     BB64 threats[NUM_COLORS]{};
     Eval_Data eval_data;
     BB_State_Info state_info;
+    Piece_To_Table* cont_hist;
     Move current_move = Move();
     Depth reduction = 0;
     int ply = 0;
     U8 psuedo_legal_movecount = 0;
 };
+
+struct Histories {
+    Move killer_moves[MAX_PLY+1][2]{};
+    std::unique_ptr<History_Table> history_table = std::make_unique<History_Table>();
+
+}
 
 class Engine {
 public:
@@ -59,7 +71,8 @@ public:
 private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
-    Clamped_Stat<int16_t, HISTORY_ORDERING_VAL> history_table[NUM_COLORS][64][64]{};
+    History_Table history_table{};
+    Continuation_History cont_history{};
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
@@ -68,6 +81,9 @@ private:
     void update_stack(const Board& board, Search_Stack* stack);
     void set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
     void set_killers(const Move& move, Search_Stack* stack);
+    void update_history(const Board& board, Search_Stack* stack, const Move& move, Move_Generator& mg, size_t i, Depth d);
+    void update_quiet_history(const Board& board, Search_Stack* stack, const Move& move, int bonus);
+
 
     Score search_iterate(Board& board);
     Score search_widen(Board& board, Move_Generator& root_mg, Search_Stack* stack, Depth depth, Score prev_score);
