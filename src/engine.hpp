@@ -13,10 +13,12 @@ constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4096;
 
-using History_Table = Clamped_Stat<int16_t, HISTORY_ORDERING_VAL>[NUM_COLORS][64][64];
-using Piece_To_Table = Clamped_Stat<int16_t, HISTORY_ORDERING_VAL>[NUM_PIECE_TYPES][64];
-using Continuation_History = Piece_To_Table[NUM_COLORS][NUM_PIECE_TYPES][64];
-using Continuation_History_Ptr = std::unique_ptr<Continuation_History>;
+template<typename T, int D, size_t... Sizes>
+using Stats = MultiArray<Clamped_Stat<T, D>, Sizes...>;
+
+using History_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_COLORS, 64, 64>;
+using Piece_To_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_PIECE_TYPES, 64>;
+using Continuation_History = MultiArray<Piece_To_Table, NUM_COLORS, NUM_PIECE_TYPES, 64>;
 
 struct Eval_Data {
     Score final_score = 0;
@@ -49,10 +51,9 @@ struct Search_Stack {
 };
 
 struct Histories {
-    Move killer_moves[MAX_PLY+1][2]{};
-    std::unique_ptr<History_Table> history_table = std::make_unique<History_Table>();
-
-}
+    History_Table history_table{};
+    Continuation_History cont_hist{};
+};
 
 class Engine {
 public:
@@ -62,7 +63,11 @@ public:
     TimePoint time_limit = 0;
     TimePoint start_time = 0;
 
-    Engine(U64 tt_size) : tt(tt_size) {}
+    Engine(U64 tt_size) : 
+        tt(tt_size), 
+        hist_ptr(std::make_unique<Histories>()),
+        history_table(hist_ptr.get()->history_table),
+        cont_history(hist_ptr.get()->cont_hist) {}
     Engine& operator=(Engine&& other);
     void new_game();
 
@@ -71,8 +76,9 @@ public:
 private:
     Transposition_Table tt;
     Move killer_moves[MAX_PLY+1][2]{};
-    History_Table history_table{};
-    Continuation_History cont_history{};
+    std::unique_ptr<Histories> hist_ptr;
+    History_Table& history_table;
+    Continuation_History& cont_history;
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);

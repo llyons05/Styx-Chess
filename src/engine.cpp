@@ -21,6 +21,9 @@ Engine& Engine::operator=(Engine&& other) {
         start_time = other.start_time;
         best_move = other.best_move;
         tt = other.tt;
+        hist_ptr = std::move(other.hist_ptr);
+        history_table = hist_ptr.get()->history_table;
+        cont_history = hist_ptr.get()->cont_hist;
     }
     return *this;
 }
@@ -37,18 +40,11 @@ void Engine::new_game() {
         killer_moves[i][0] = Move();
         killer_moves[i][1] = Move();
     }
-    for (eColor c = WHITE; c < NUM_COLORS; c++) {
-        for (int i = 0; i < 64; i++)
-            for (int j = 0; j < 64; j++) {
-                history_table[c][i][j] = 0;
-            }
-            
-        for (int p1 = 0; p1 < NUM_PIECE_TYPES; p1++)
-            for (int s1 = 0; s1 < 64; s1++)
-                for (int p2 = 0; p2 < NUM_PIECE_TYPES; p2++)
-                    for (int s2 = 0; s2 < 64; s2++)
-                        cont_history.get()[c][p1][s1][p2][s2] = 0;
-    }
+    history_table.fill(0);
+    for (int c = 0; c < NUM_COLORS; c++)
+        for (int p = 0; p < NUM_PIECE_TYPES; p++)
+            for (int s = 0; s < 64; s++)
+                cont_history[c][p][s].fill(0);
 }
 
 Move Engine::find_move(Board& board, const Time_Info& tc_info) {
@@ -141,14 +137,12 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
         if (move.score < KILLER_ORDERING_VAL-1) {
             move.score = history_table[board.stm()][move.from][move.to];
             if (!(stack-1)->current_move.is_nullmove() && (stack-1)->current_move.is_valid())
-                move.score += *(stack-1)->cont_hist[move.piece_from][move.to];
+                move.score += (*(stack-1)->cont_hist)[move.piece_from][move.to];
         }
     }
 }
 
 void Engine::update_history(const Board& board, Search_Stack* stack, const Move& m, Move_Generator& mg, size_t i, Depth d) {
-    if (m.piece_from == KING && m.to == H8)
-        std::cerr << "KH8\n";
     int bonus = std::min(100 * d - 80, 1000);
     int malus = std::min(300 * d - 190, 2000);
     if (!m.is_capture() && !m.is_promo()) {
@@ -162,7 +156,7 @@ void Engine::update_history(const Board& board, Search_Stack* stack, const Move&
 void Engine::update_quiet_history(const Board& board, Search_Stack* stack, const Move& move, int bonus) {
     history_table[board.stm()][move.from][move.to] << bonus;
     if (!(stack-1)->current_move.is_nullmove() && (stack-1)->current_move.is_valid())
-        *(stack-1)->cont_hist[move.piece_from][move.to] << bonus * 3 / 4;
+        (*(stack-1)->cont_hist)[move.piece_from][move.to] << bonus * 3 / 4;
 }
 
 eSquare least_val_attacker(const BB64 bbs[NUM_COLORS], BB64 attackers) {
