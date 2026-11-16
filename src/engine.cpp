@@ -143,20 +143,20 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
 }
 
 void Engine::update_history(const Board& board, Search_Stack* stack, const Move& m, Move_Generator& mg, size_t i, Depth d) {
-    int bonus = std::min(100 * d - 80, 1000);
-    int malus = std::min(300 * d - 190, 2000);
+    int bonus = 75*d - 60;//std::min(100 * d - 80, 1000);
+    int malus = 150*d - 80;//std::min(300 * d - 190, 2000);
     if (!m.is_capture() && !m.is_promo()) {
         update_quiet_history(board, stack, m, bonus);
         for (size_t j = 0; j < i; j++)
             if (!(mg[j].is_capture() || mg[j].is_promo()))
-                update_quiet_history(board, stack, mg[j], -malus * 3 / 4);
+                update_quiet_history(board, stack, mg[j], -malus);
     }
 }
 
 void Engine::update_quiet_history(const Board& board, Search_Stack* stack, const Move& move, int bonus) {
     history_table[board.stm()][move.from][move.to] << bonus;
     if (!(stack-1)->current_move.is_nullmove() && (stack-1)->current_move.is_valid())
-        (*(stack-1)->cont_hist)[move.piece_from][move.to] << bonus * 3 / 4;
+        (*(stack-1)->cont_hist)[move.piece_from][move.to] << bonus * 3/4;
 }
 
 eSquare least_val_attacker(const BB64 bbs[NUM_COLORS], BB64 attackers) {
