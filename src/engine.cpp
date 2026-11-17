@@ -148,8 +148,8 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
 }
 
 void Engine::update_history(const Board& board, Search_Stack* stack, const Move& m, Move_Generator& mg, size_t i, Depth d) {
-    int bonus = 75*d - 60;//std::min(100 * d - 80, 1000);
-    int malus = 150*d - 80;//std::min(300 * d - 190, 2000);
+    int bonus = 75*d - 60;
+    int malus = 150*d - 80;
     if (!m.is_capture() && !m.is_promo()) {
         update_quiet_history(board, stack, m, bonus);
         for (size_t j = 0; j < i; j++)
