@@ -72,7 +72,7 @@ public:
         history_table(hist_ptr.get()->history_table),
         cont_history(hist_ptr.get()->cont_hist),
         cap_history(hist_ptr.get()->cap_hist) {}
-    Engine& operator=(Engine&& other);
+    void clear_hash(U64 bytes);
     void new_game();
 
     Move find_move(Board& board, const Time_Info& tc_info);
