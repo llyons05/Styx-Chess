@@ -113,7 +113,7 @@ void UCI_Command::setoption() {
 
     if ((name == "Hash") && !engine_running) {
         uci_options.hash_size = U64(std::stoull(value)* 1000000);
-        engine = Engine(uci_options.hash_size);
+        engine.clear_hash(uci_options.hash_size);
     }
 }
 

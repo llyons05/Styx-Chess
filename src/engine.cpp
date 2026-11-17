@@ -11,22 +11,9 @@ const std::array<int, MAX_MOVES> reductions = [] {
     return table;
 }();
 
-Engine& Engine::operator=(Engine&& other) {
-    if (this != &other) {
-        search_cancelled = other.search_cancelled;
-        external_cancel.store(other.external_cancel.load(std::memory_order::relaxed),
-                            std::memory_order::relaxed);
-        nodes_traversed = other.nodes_traversed;
-        time_limit = other.time_limit;
-        start_time = other.start_time;
-        best_move = other.best_move;
-        tt = other.tt;
-        hist_ptr = std::move(other.hist_ptr);
-        history_table = hist_ptr.get()->history_table;
-        cont_history = hist_ptr.get()->cont_hist;
-        cap_history = hist_ptr.get()->cap_hist;
-    }
-    return *this;
+void Engine::clear_hash(U64 bytes) {
+    Transposition_Table new_tt(bytes);
+    tt = new_tt;
 }
 
 void Engine::new_game() {
