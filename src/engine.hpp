@@ -8,16 +8,18 @@
 
 constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
-constexpr int PROMO_ORDERING_VAL    = 30000;
+constexpr int PROMO_ORDERING_VAL    = 50000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
 constexpr int KILLER_ORDERING_VAL   = 10000;
 constexpr int HISTORY_ORDERING_VAL  = 4096;
+constexpr int CAPTURE_HIST_ORDERING_VAL = 4096;
 
 template<typename T, int D, size_t... Sizes>
 using Stats = MultiArray<Clamped_Stat<T, D>, Sizes...>;
 
 using History_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_COLORS, 64, 64>;
 using Piece_To_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_PIECE_TYPES, 64>;
+using Capture_History = Stats<int16_t, CAPTURE_HIST_ORDERING_VAL, NUM_COLORS, NUM_PIECE_TYPES, 64, NUM_PIECE_TYPES>;
 using Continuation_History = MultiArray<Piece_To_Table, NUM_COLORS, NUM_PIECE_TYPES, 64>;
 
 struct Eval_Data {
@@ -53,6 +55,7 @@ struct Search_Stack {
 struct Histories {
     History_Table history_table{};
     Continuation_History cont_hist{};
+    Capture_History cap_hist{};
 };
 
 class Engine {
@@ -67,7 +70,8 @@ public:
         tt(tt_size), 
         hist_ptr(std::make_unique<Histories>()),
         history_table(hist_ptr.get()->history_table),
-        cont_history(hist_ptr.get()->cont_hist) {}
+        cont_history(hist_ptr.get()->cont_hist),
+        cap_history(hist_ptr.get()->cap_hist) {}
     Engine& operator=(Engine&& other);
     void new_game();
 
@@ -79,6 +83,7 @@ private:
     std::unique_ptr<Histories> hist_ptr;
     History_Table& history_table;
     Continuation_History& cont_history;
+    Capture_History& cap_history;
     Move best_move = Move();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);

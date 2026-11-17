@@ -24,6 +24,7 @@ Engine& Engine::operator=(Engine&& other) {
         hist_ptr = std::move(other.hist_ptr);
         history_table = hist_ptr.get()->history_table;
         cont_history = hist_ptr.get()->cont_hist;
+        cap_history = hist_ptr.get()->cap_hist;
     }
     return *this;
 }
@@ -41,6 +42,7 @@ void Engine::new_game() {
         killer_moves[i][1] = Move();
     }
     history_table.fill(0);
+    cap_history.fill(0);
     for (int c = 0; c < NUM_COLORS; c++)
         for (int p = 0; p < NUM_PIECE_TYPES; p++)
             for (int s = 0; s < 64; s++)
@@ -68,9 +70,11 @@ void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
             }
         for (int p1 = 0; p1 < NUM_PIECE_TYPES; p1++)
             for (int s1 = 0; s1 < 64; s1++)
-                for (int p2 = 0; p2 < NUM_PIECE_TYPES; p2++)
+                for (int p2 = 0; p2 < NUM_PIECE_TYPES; p2++) {
+                    cap_history[c][p1][s1][p2] /= 2;
                     for (int s2 = 0; s2 < 64; s2++)
                         cont_history[c][p1][s1][p2][s2] /= 2;
+                }
     }
 }
 
@@ -112,10 +116,11 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
             if (opp_threats.filled(move.to))
                 see = static_exchange_eval(board, move);
 
-            if (see < -50)
-                move.score = -CAPTURE_ORDERING_VAL + see - move.piece_from;
+            int cap_val = mat_val(move.piece_captured)*7 + cap_history[board.stm()][move.piece_from][move.to][move.piece_captured];
+            if (see >= -cap_val/18)
+                move.score = CAPTURE_ORDERING_VAL + cap_val;
             else
-                move.score = CAPTURE_ORDERING_VAL + see - move.piece_from;
+                move.score = -HISTORY_ORDERING_VAL + cap_val;
         }
 
         if (move.is_promo()) {
@@ -151,6 +156,12 @@ void Engine::update_history(const Board& board, Search_Stack* stack, const Move&
             if (!(mg[j].is_capture() || mg[j].is_promo()))
                 update_quiet_history(board, stack, mg[j], -malus);
     }
+    else if (m.is_capture()) {
+        cap_history[board.stm()][m.piece_from][m.to][m.piece_captured] << bonus * 4 / 3;
+    }
+    for (size_t j = 0; j < i; j++)
+        if (mg[j].is_capture())
+            cap_history[board.stm()][mg[j].piece_from][mg[j].to][mg[j].piece_captured] << -malus * 4 / 3;
 }
 
 void Engine::update_quiet_history(const Board& board, Search_Stack* stack, const Move& move, int bonus) {
@@ -504,7 +515,7 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!(m.is_capture() || m.is_promo()) || (m.score < 0)) {
+        if (!(m.is_capture() || m.is_promo()) || (m.score < KILLER_ORDERING_VAL-1)) {
             undo_move(board, stack, m);
             continue;
         }
