@@ -23,6 +23,9 @@ public:
     Piece move(const Move& m);
     void undo(const Move& m, const BB_State_Info& state_info);
     bool is_draw();
+    Score non_pawn_mat(eColor c) const {
+        return bbs.material[c] - mat_val(KING) - bbs.piece_counts[c][PAWN] * mat_val(PAWN);
+    }
 
     void print() const;
 private:

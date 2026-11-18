@@ -371,7 +371,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
     if (!flag_in_check
      && (depth > 2)
      && !(stack-1)->current_move.is_nullmove()
-     && (board.bbs.piece_counts[board.stm()][PAWN]*mat_val(PAWN) < board.bbs.material[board.stm()])
+     && (board.bbs.piece_counts[board.stm()][PAWN]*mat_val(PAWN) <= board.bbs.material[board.stm()] - mat_val(KING))
      && (eval(board, stack) >= beta)) {
         Depth reduction = (depth > 5) ? 3 : 2;
         do_move(board, stack, Move::null());
