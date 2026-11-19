@@ -28,13 +28,14 @@ bool failed = false;
 U64 perft(Board& board, int depth) {
     total_nodes++;
     U64 result = 0;
-    Move_Generator mg(board, 50);
+    Move_Generator mg(board);
     BB_State_Info info = board.bbs.state_info();
 
     if (depth <= 0)
         return 1;
 
-    for (const Move& move : mg.movelist) {
+    for (int i = 0; i < mg.movecount; i++) {
+        const Move& move = mg[i];
         board.move(move);
         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm()))) {
             if (depth == 1) {

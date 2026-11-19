@@ -15,16 +15,9 @@ public:
     ePieceType piece_captured : 3;
 
     eSpecialMoveFlags move_flag : 3;
-
-    Move() : score(0),
-             id(255),
-             from(A1),
-             to(A1),
-             piece_from(NUM_PIECE_TYPES),
-             piece_to(NUM_PIECE_TYPES),
-             piece_captured(NUM_PIECE_TYPES),
-             move_flag(MFLAG_NORMAL) {}
     
+    Move() = default;
+
     Move(eSquare from,
          eSquare to,
          ePieceType piece_from,
@@ -44,6 +37,10 @@ public:
 
     static constexpr Move null() {
         return Move(A1, A1, NUM_PIECE_TYPES, NUM_PIECE_TYPES, NUM_PIECE_TYPES, MFLAG_NULLMOVE, 255);
+    }
+
+    static constexpr Move none() {
+        return Move(A1, A1, NUM_PIECE_TYPES, NUM_PIECE_TYPES, NUM_PIECE_TYPES, MFLAG_NORMAL, 255);
     }
 
     constexpr bool operator==(const Move& other) const {
