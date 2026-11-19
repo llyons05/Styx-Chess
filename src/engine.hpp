@@ -10,7 +10,7 @@ constexpr int TT_ORDERING_VAL       = 100000;
 constexpr int ROOT_ORDERING_VAL     = 100000;
 constexpr int PROMO_ORDERING_VAL    = 50000;
 constexpr int CAPTURE_ORDERING_VAL  = 25000;
-constexpr int KILLER_ORDERING_VAL   = 10000;
+constexpr int KILLER_ORDERING_VAL   = 15000;
 constexpr int HISTORY_ORDERING_VAL  = 4096;
 constexpr int CAPTURE_HIST_ORDERING_VAL = 4096;
 
@@ -18,7 +18,7 @@ template<typename T, int D, size_t... Sizes>
 using Stats = MultiArray<Clamped_Stat<T, D>, Sizes...>;
 
 using History_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_COLORS, 64, 64>;
-using Piece_To_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_PIECE_TYPES, 64>;
+using Piece_To_Table = Stats<int16_t, HISTORY_ORDERING_VAL, NUM_COLORS, NUM_PIECE_TYPES, 64>;
 using Capture_History = Stats<int16_t, CAPTURE_HIST_ORDERING_VAL, NUM_COLORS, NUM_PIECE_TYPES, 64, NUM_PIECE_TYPES>;
 using Continuation_History = MultiArray<Piece_To_Table, NUM_COLORS, NUM_PIECE_TYPES, 64>;
 
@@ -87,7 +87,7 @@ private:
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);
-    void init_stack(const Board& board, Search_Stack* stack_base);
+    Search_Stack* init_stack(const Board& board, Search_Stack* stack_base);
     void update_stack(const Board& board, Search_Stack* stack);
     void set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id);
     void set_killers(const Move& move, Search_Stack* stack);

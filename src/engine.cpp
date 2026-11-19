@@ -59,8 +59,10 @@ void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
             for (int s1 = 0; s1 < 64; s1++)
                 for (int p2 = 0; p2 < NUM_PIECE_TYPES; p2++) {
                     cap_history[c][p1][s1][p2] /= 2;
-                    for (int s2 = 0; s2 < 64; s2++)
-                        cont_history[c][p1][s1][p2][s2] /= 2;
+                    for (int s2 = 0; s2 < 64; s2++) {
+                        cont_history[c][p1][s1][WHITE][p2][s2] /= 2;
+                        cont_history[c][p1][s1][BLACK][p2][s2] /= 2;
+                    }
                 }
     }
 }
@@ -77,15 +79,21 @@ TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
     return tc_info.movetime;
 }
 
-void Engine::init_stack(const Board& board, Search_Stack* stack_base) {
-    for (int i = 0; i <= MAX_PLY+1; i++)
-        stack_base[i].ply = i-1;
-    stack_base[0].current_move = Move::null();
-    stack_base[0].cont_hist = &cont_history[WHITE][PAWN][0];
-    stack_base[1].cont_hist = &cont_history[WHITE][PAWN][0];
-    stack_base[1].state_info = board.bbs.state_info();
-    stack_base[1].threats[WHITE] = Move_Generator::attacks(board, WHITE);
-    stack_base[1].threats[BLACK] = Move_Generator::attacks(board, BLACK);
+Search_Stack* Engine::init_stack(const Board& board, Search_Stack* stack_base) {
+    Search_Stack* root_stack = &stack_base[2];
+    for (int i = 0; i <= MAX_PLY; i++)
+        (root_stack+i)->ply = i-1;
+
+    for (int i = -1; i >= -2; i--) {
+        (root_stack-i)->current_move = Move::null();
+        (root_stack-i)->cont_hist = &cont_history[WHITE][PAWN][0];
+    }
+
+    root_stack->cont_hist = &cont_history[WHITE][PAWN][0];
+    root_stack->state_info = board.bbs.state_info();
+    root_stack->threats[WHITE] = Move_Generator::attacks(board, WHITE);
+    root_stack->threats[BLACK] = Move_Generator::attacks(board, BLACK);
+    return root_stack;
 }
 
 void Engine::update_stack(const Board& board, Search_Stack* stack) {
@@ -127,8 +135,9 @@ void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stac
         }
         if (move.score < KILLER_ORDERING_VAL-1) {
             move.score = history_table[board.stm()][move.from][move.to];
-            if (!(stack-1)->current_move.is_nullmove() && (stack-1)->current_move.is_valid())
-                move.score += (*(stack-1)->cont_hist)[move.piece_from][move.to];
+            for (int j = 1; j <= 2; j++)
+                if (!(stack-j)->current_move.is_nullmove() && (stack-j)->current_move.is_valid())
+                    move.score += (*(stack-j)->cont_hist)[board.stm()][move.piece_from][move.to];
         }
     }
 }
@@ -152,8 +161,9 @@ void Engine::update_history(const Board& board, Search_Stack* stack, const Move&
 
 void Engine::update_quiet_history(const Board& board, Search_Stack* stack, const Move& move, int bonus) {
     history_table[board.stm()][move.from][move.to] << bonus;
-    if (!(stack-1)->current_move.is_nullmove() && (stack-1)->current_move.is_valid())
-        (*(stack-1)->cont_hist)[move.piece_from][move.to] << bonus * 3/4;
+    for (int i = 1; i <= 2; i++)
+        if (!(stack-i)->current_move.is_nullmove() && (stack-i)->current_move.is_valid())
+            (*(stack-i)->cont_hist)[board.stm()][move.piece_from][move.to] << bonus * 3 / 4;
 }
 
 eSquare least_val_attacker(const BB64 bbs[NUM_COLORS], BB64 attackers) {
@@ -231,17 +241,17 @@ void Engine::undo_move(Board& board, Search_Stack* stack, const Move& move) {
 }
 
 Score Engine::search_iterate(Board& board) {
-    Search_Stack stack[MAX_PLY + 2] {};
-    init_stack(board, stack);
+    Search_Stack stack[MAX_PLY + 3] {};
+    Search_Stack* root_stack = init_stack(board, stack);
     Move_Generator root_mg(board);
-    set_movescores(board, root_mg, stack+1, 255);
+    set_movescores(board, root_mg, root_stack, 255);
 
     Depth current_depth = 1;
-    Score final_val = search_root(board, root_mg, stack+1, -INF_SCORE, INF_SCORE, current_depth++);
+    Score final_val = search_root(board, root_mg, root_stack, -INF_SCORE, INF_SCORE, current_depth++);
     UCI_Command::info(nodes_traversed, 1, start_time, final_val, tt.hashfull());
 
     while (((abs(final_val) < MAX_SCORE - current_depth)) && !search_cancelled && (current_depth < MAX_PLY)) {
-        final_val = search_widen(board, root_mg, stack+1, current_depth, final_val);
+        final_val = search_widen(board, root_mg, root_stack, current_depth, final_val);
         UCI_Command::info(nodes_traversed, current_depth, start_time, final_val, tt.hashfull());
         current_depth++;
     }
