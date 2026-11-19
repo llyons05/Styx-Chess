@@ -11,11 +11,10 @@ const int MAX_MOVES = 218;
 
 class Move_Generator {
 public:
-    std::vector<Move> movelist;
-    BB64 destinations;
+    std::array<Move, MAX_MOVES> movelist;
+    U8 movecount = 0;
 
-    Move_Generator(const Board& board, U8 prev_movecount) : movelist(), destinations(0), board(board), bbs(board.bbs) {
-        movelist.reserve(prev_movecount + 5);
+    Move_Generator(const Board& board) : movecount(0), board(board), bbs(board.bbs) {
         if (board.stm() == WHITE)
             gen_moves<WHITE>();
         else
@@ -26,7 +25,7 @@ public:
         int move_index = start;
         int best_score = movelist[move_index].score;
 
-        for (size_t i = move_index+1; i < movelist.size(); i++) {
+        for (size_t i = move_index+1; i < movecount; i++) {
             if (movelist[i].score > best_score) {
                 best_score = movelist[i].score;
                 move_index = i;
@@ -38,7 +37,7 @@ public:
     }
 
     constexpr Move& operator[](U8 index) {
-        assert(index < movelist.size());
+        assert(index < movecount);
         return movelist[index];
     }
 
@@ -59,7 +58,7 @@ private:
     const Bitboards& bbs;
 
     template<eColor C>
-    std::vector<Move>& gen_moves();
+    void gen_moves();
 
     void write_moves(ePieceType piece_from, ePieceType piece_to, eSquare from, BB64 to, eSpecialMoveFlags flag);
 

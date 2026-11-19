@@ -22,11 +22,11 @@ void Engine::new_game() {
     nodes_traversed = 0;
     time_limit = INF_TIME;
     start_time = 0;
-    best_move = Move();
+    best_move = Move::none();
     tt.clear();
     for (int i = 0; i <= MAX_PLY; i++) {
-        killer_moves[i][0] = Move();
-        killer_moves[i][1] = Move();
+        killer_moves[i][0] = Move::none();
+        killer_moves[i][1] = Move::none();
     }
     history_table.fill(0);
     cap_history.fill(0);
@@ -45,7 +45,7 @@ Move Engine::find_move(Board& board, const Time_Info& tc_info) {
 
 void Engine::prepare_for_search(const Board& board, const Time_Info& tc_info) {
     time_limit = get_searchtime(board, tc_info);
-    best_move = Move();
+    best_move = Move::none();
     nodes_traversed = 0;
     start_time = get_time();
     search_cancelled = false;
@@ -80,7 +80,6 @@ TimePoint Engine::get_searchtime(const Board& board, const Time_Info& tc_info) {
 void Engine::init_stack(const Board& board, Search_Stack* stack_base) {
     for (int i = 0; i <= MAX_PLY+1; i++)
         stack_base[i].ply = i-1;
-    stack_base[0].psuedo_legal_movecount = 50;
     stack_base[0].current_move = Move::null();
     stack_base[0].cont_hist = &cont_history[WHITE][PAWN][0];
     stack_base[1].cont_hist = &cont_history[WHITE][PAWN][0];
@@ -96,7 +95,7 @@ void Engine::update_stack(const Board& board, Search_Stack* stack) {
 
 void Engine::set_movescores(Board& board, Move_Generator& mg, Search_Stack* stack, U8 tt_move_id) {
     BB64 opp_threats = stack->threats[!board.stm()];
-    for (std::size_t i = 0; i < mg.movelist.size(); i++) {
+    for (std::size_t i = 0; i < mg.movecount; i++) {
         Move& move = mg[i];
         if (move.is_capture()) {
             Score see = mat_val(move.piece_captured);
@@ -234,9 +233,8 @@ void Engine::undo_move(Board& board, Search_Stack* stack, const Move& move) {
 Score Engine::search_iterate(Board& board) {
     Search_Stack stack[MAX_PLY + 2] {};
     init_stack(board, stack);
-    Move_Generator root_mg(board, 50);
+    Move_Generator root_mg(board);
     set_movescores(board, root_mg, stack+1, 255);
-    (stack+1)->psuedo_legal_movecount = root_mg.movelist.size();
 
     Depth current_depth = 1;
     Score final_val = search_root(board, root_mg, stack+1, -INF_SCORE, INF_SCORE, current_depth++);
@@ -291,7 +289,7 @@ Score Engine::search_root(Board& board, Move_Generator& root_mg, Search_Stack* s
     int chosen_move_idx = 0;
     eEntry_Type tt_flag = TT_LOWERBOUND;
 
-    for (size_t i = 0; i < root_mg.movelist.size(); i++) {
+    for (size_t i = 0; i < root_mg.movecount; i++) {
         Move& m = root_mg.next_move(i);
         // std::cout << "Playing move " << m << " at depth " << depth << " score=" << m.score << "\n";
         if (!do_move(board, stack, m)) {
@@ -396,13 +394,12 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
      && (eval(board, stack) + 200*depth <= alpha))
         futility_prune = true;
 
-    Move_Generator mg(board, (stack-2)->psuedo_legal_movecount);
+    Move_Generator mg(board);
     set_movescores(board, mg, stack, tt_move_id);
-    stack->psuedo_legal_movecount = mg.movelist.size();
     eEntry_Type tt_flag = TT_UPPERBOUND;
     U8 best_move_id = 255;
     int moves_tried = 0;
-    for (size_t i = 0; i < mg.movelist.size(); i++) {
+    for (size_t i = 0; i < mg.movecount; i++) {
         Move& m = mg.next_move(i);
         if (!do_move(board, stack, m)) {
             undo_move(board, stack, m);
@@ -495,12 +492,11 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     if (static_eval > alpha)
         alpha = static_eval;
     
-    Move_Generator mg(board, (stack-2)->psuedo_legal_movecount);
+    Move_Generator mg(board);
     set_movescores(board, mg, stack, 255);
-    stack->psuedo_legal_movecount = mg.movelist.size();
 
     int legal_moves = 0;
-    for (size_t i = 0; i < mg.movelist.size(); i++) {
+    for (size_t i = 0; i < mg.movecount; i++) {
         Move& m = mg.next_move(i);
         if (!do_move(board, stack, m)) {
             undo_move(board, stack, m);

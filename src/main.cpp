@@ -20,15 +20,15 @@ void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
     while (true) {
         if (board.is_draw())
             break;
-        Move_Generator mg(board, 50);
+        Move_Generator mg(board);
         bool undo = false;
         int legal_movecount = 0;
-        for (Move& move : mg.movelist) {
+        for (int i = 0; i < mg.movecount; i++) {
             BB_State_Info info = board.bbs.state_info();
-            board.move(move);
+            board.move(mg[i]);
             if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
                 legal_movecount++;
-            board.undo(move, info);
+            board.undo(mg[i], info);
         }
         if (legal_movecount == 0) {
             std::cout << "GAME OVER!\n";
@@ -45,13 +45,13 @@ void cli_mode(eColor player_color, const Time_Info& tc_info, std::string fen) {
                     undo = true;
                     break;
                 }
-                for (Move& move : mg.movelist) {
-                    if (move.to == square) {
+                for (int i = 0; i < mg.movecount; i++) {
+                    if (mg[i].to == square) {
                         BB_State_Info info = board.bbs.state_info();
-                        board.move(move);
+                        board.move(mg[i]);
                         if (!Move_Generator::is_attacked(board, board.stm(), board.bbs.king_sq(!board.stm())))
-                            legal_moves.push_back(move);
-                        board.undo(move, info);
+                            legal_moves.push_back(mg[i]);
+                        board.undo(mg[i], info);
                     }
                 }
                 if (legal_moves.empty())

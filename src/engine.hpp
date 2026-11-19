@@ -46,10 +46,9 @@ struct Search_Stack {
     Eval_Data eval_data;
     BB_State_Info state_info;
     Piece_To_Table* cont_hist;
-    Move current_move = Move();
+    Move current_move = Move::none();
     Depth reduction = 0;
     int ply = 0;
-    U8 psuedo_legal_movecount = 0;
 };
 
 struct Histories {
@@ -79,12 +78,12 @@ public:
     
 private:
     Transposition_Table tt;
-    Move killer_moves[MAX_PLY+1][2]{};
+    Move killer_moves[MAX_PLY+1][2];
     std::unique_ptr<Histories> hist_ptr;
     History_Table& history_table;
     Continuation_History& cont_history;
     Capture_History& cap_history;
-    Move best_move = Move();
+    Move best_move = Move::none();
 
     void prepare_for_search(const Board& board, const Time_Info& tc_info);
     TimePoint get_searchtime(const Board& board, const Time_Info& tc_info);

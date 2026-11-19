@@ -5,29 +5,28 @@ std::array<Magic_Table<BISHOP>, 64> bishop_magics;
 std::array<Magic_Table<ROOK>, 64> rook_magics;
 
 template <eColor C>
-std::vector<Move>& Move_Generator::gen_moves() {
+void Move_Generator::gen_moves() {
     gen_pawn_moves<C>();
     gen_knight_moves();
     gen_bishop_moves();
     gen_rook_moves();
     gen_queen_moves();
     gen_king_moves();
-    return movelist;
 }
 
 void Move_Generator::write_moves(ePieceType piece_from, ePieceType piece_to, eSquare from, BB64 to, eSpecialMoveFlags flag) {
-    destinations |= to;
     while(to) {
         eSquare dest = to.pop();
-        movelist.push_back(Move(
+        movelist[movecount] = Move(
             from,
             dest,
             piece_from,
             piece_to,
             (flag == MFLAG_EP) ? PAWN : (bbs.opp_bb().filled(dest) ? bbs.piece_at(dest).pt : NUM_PIECE_TYPES),
             flag,
-            movelist.size()
-        ));
+            movecount
+        );
+        movecount++;
     }
 }
 
@@ -337,8 +336,8 @@ void init_magics() {
     }
 }
 
-template std::vector<Move>& Move_Generator::gen_moves<WHITE>();
-template std::vector<Move>& Move_Generator::gen_moves<BLACK>();
+template void Move_Generator::gen_moves<WHITE>();
+template void Move_Generator::gen_moves<BLACK>();
 template BB64 Move_Generator::pawn_attacks<WHITE>(BB64 pawns);
 template BB64 Move_Generator::pawn_attacks<BLACK>(BB64 pawns);
 
