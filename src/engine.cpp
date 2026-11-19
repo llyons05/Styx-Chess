@@ -333,7 +333,7 @@ Score Engine::search(Board& board, Search_Stack* stack, Score alpha, Score beta,
         return 0;
     
     bool flag_in_check = in_check(board, board.stm(), stack);
-    if (flag_in_check) depth++;
+    // if (flag_in_check) depth++;
 
     if (board.is_draw()) {
         return 0;
@@ -483,14 +483,19 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
     if (!(board.bbs.has_mating_material(WHITE) || board.bbs.has_mating_material(BLACK)))
         return 0;
 
-    Score static_eval = eval(board, stack);
     if (stack->ply >= MAX_PLY)
-        return static_eval;
+        return eval(board, stack);
 
-    if (static_eval >= beta)
-        return beta;
-    if (static_eval > alpha)
-        alpha = static_eval;
+    bool flag_in_check = in_check(board, board.stm(), stack);
+    Score best_val = -INF_SCORE;
+    if (!flag_in_check) {
+        Score static_eval = eval(board, stack);
+        if (static_eval >= beta)
+            return beta;
+        if (static_eval > alpha)
+            alpha = static_eval;
+        best_val = alpha;
+    }
     
     Move_Generator mg(board);
     set_movescores(board, mg, stack, 255);
@@ -503,26 +508,30 @@ Score Engine::q_search(Board& board, Search_Stack* stack, Score alpha, Score bet
             continue;
         }
         legal_moves++;
-        if (!(m.is_capture() || m.is_promo()) || (m.score < KILLER_ORDERING_VAL-1)) {
+        if ((best_val > -MIN_WINNING_SCORE) && (!(m.is_capture() || m.is_promo()) || (m.score < KILLER_ORDERING_VAL-1))) {
             undo_move(board, stack, m);
             continue;
         }
         update_stack(board, stack+1);
+        // if (best_val > -INF_SCORE && !m.is_capture())   {std::cerr << "NON CAP\n"; board.print();}
         Score val = -q_search(board, stack+1, -beta, -alpha);
         undo_move(board, stack, m);
         
         if (search_cancelled)
             break;
-        
-        if (val > alpha) {
-            alpha = val;
-            if (val >= beta)
-                break;
+
+        if (val > best_val) {
+            best_val = val;
+            if (val > alpha) {
+                alpha = val;
+                if (val >= beta)
+                    break;
+            }
         }
     }
 
     if (legal_moves == 0) {
-        if (in_check(board, board.stm(), stack))
+        if (flag_in_check)
             return -MAX_SCORE + stack->ply;
 		else
             return 0;
